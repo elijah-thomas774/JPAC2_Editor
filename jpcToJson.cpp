@@ -350,8 +350,9 @@ JPA_TDB1 read_TDB1_JPAC2_11(Buffer& block, u32 num){
 JPA_Resource read_resouce_JPAC2_10(Buffer& rawRes){
     JPA_Resource resource;
     resource.resourceId = rawRes.read_u16(0x0);
-    resource.blockCount = rawRes.read_u8(0x4);
-    resource.fieldBlockCount = rawRes.read_u8(0x5);
+    resource.blockCount = rawRes.read_u16(0x2);
+    resource.fieldBlockCount = rawRes.read_u8(0x4);
+    resource.keyBlockCount = rawRes.read_u8(0x5);
     resource.tdb1Count = rawRes.read_u8(0x6);
     u32 currOffset = 0x8;
     for (int i = 0; i < resource.blockCount; i++)

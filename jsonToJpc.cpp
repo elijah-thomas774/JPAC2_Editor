@@ -219,6 +219,68 @@ Buffer toBuffer(JPA_TDB1& tdb1){
         block.write(std::vector<u8>(4-block.data.size()&3, 0));
     return block;
 }
-Buffer toBuffer(JPA_Texture& texture);
-Buffer toBuffer(JPA_Resource& resource);
-Buffer toBuffer(JPAC& jpc);
+Buffer toBuffer(JPA_Texture& texture){
+    Buffer block;
+    block.write((u32)'TEX1');
+    u32 size = 0x20 + texture.data.size();
+    block.write(size);
+    block.write((u32)0);
+    for (i8 c: texture.name)
+        block.write(c);
+    block.write(std::vector<u8>(20-texture.name.length(), 0));
+    block.write(texture.data);
+    return block;
+}
+Buffer toBuffer(JPA_Resource& resource){
+    Buffer block;
+    block.write(resource.resourceId);
+    block.write(resource.blockCount);
+    block.write(resource.fieldBlockCount);
+    block.write(resource.keyBlockCount);
+    block.write(resource.tdb1Count);
+    block.write((u8)0);
+    for (auto& blk : resource.bem1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.fld1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.kfa1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.bsp1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.esp1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.ssp1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.etx1)
+        block.append(toBuffer(blk));
+    for (auto& blk : resource.tdb1)
+        block.append(toBuffer(blk));
+    return block;
+}
+Buffer toBuffer(JPAC& jpc){
+    jpc.update(); // does a final update
+    Buffer block;
+    for (i32 i = 0; i < 8; i++)
+        block.write((u8)jpc.version.at(i));
+    block.write(jpc.resource_count);
+    block.write(jpc.texture_count);
+    block.write((u32)0); // This will be updated after things are added
+    for (auto&res : jpc.resources)
+        block.append(toBuffer(res));
+    if (block.data.size()&0xF != 0)
+        block.write(std::vector<u8>(16-block.data.size()&0xF, 0));
+    u32 size = block.data.size();
+    block.data.at(0xC) = (u8)((size >> 24) & 0xFF);
+    block.data.at(0xD) = (u8)((size >> 16) & 0xFF);
+    block.data.at(0xE) = (u8)((size >>  8) & 0xFF);
+    block.data.at(0xF) = (u8)((size >>  0) & 0xFF);
+    for (auto& tex: jpc.textures)
+        block.append(toBuffer(tex));
+    return block;
+}
+
+void write_buffer(std::string&, Buffer&);
+
+void edit_from_file(); // This will handle version differences by calling the respectice build func
+void load_from_file();
+void write_to_file();
