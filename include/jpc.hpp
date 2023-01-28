@@ -26,6 +26,7 @@ struct BTI_header {
 class JPA_BEM1 { 
     public:
     u32 emitFlags;
+    u16 unkEmitFlags;
     u32 unkFlags;
     u8 volumeType;
     vec3f emitterScl;
@@ -53,6 +54,9 @@ class JPA_BEM1 {
     i16 volumeSize;
     i16 divNumber;
     u8 rateStep;
+
+    void parse_flags();
+    void build_flags();
 };
 class JPA_BSP1 {
     public:
@@ -118,7 +122,8 @@ class JPA_BSP1 {
 };
 class JPA_ESP1 {
     public:
-    u32 origFlags;
+    u32 flags;
+    u8 unkFlags;
     bool isEnableScale;
     bool isDiffXY;
     u8 scaleAnmTypeX;
@@ -150,6 +155,8 @@ class JPA_ESP1 {
     f32 rotateSpeed;
     f32 rotateSpeedRandom;
     f32 rotateDirection;
+    void parse_flags();
+    void build_flags();
 };
 class JPA_ETX1 {
     public:
@@ -163,7 +170,8 @@ class JPA_ETX1 {
 };
 class JPA_SSP1 {
     public:
-    u32 origFlags;
+    u32 flags;
+    u8 unkFlags1;
     bool isInheritedScale;
     bool isInheritedRGB;
     bool isInheritedAlpha;
@@ -192,10 +200,13 @@ class JPA_SSP1 {
     u8 step;
     u8 texIdx;
     u16 rotateSpeed;
+
+    void build_flags();
+    void parse_flags();
 };
 class JPA_FLD1 {
     public:
-    u32 origFlags;
+    u32 flags;
     u16 sttFlag;
     u8 type;
     u8 addType;
@@ -209,6 +220,9 @@ class JPA_FLD1 {
     f32 enTime;
     f32 disTime;
     u8 cycle;
+
+    void parse_flags();
+    void build_flags();
 };
 class JPA_KFA1 {
     public:
@@ -218,9 +232,13 @@ class JPA_KFA1 {
     std::vector<f32> keyValues;
     bool isLoopEnable;
 };
-class JPA_TDB1 { // just a vector of u16 indecies
+class JPA_TDB1 { // Maps to the texture names (index)
     public:
+        std::vector<u16> textureIdx;
         std::vector<std::string> textures;
+
+        void map_to_texture(std::vector<JPA_Texture> &textures);
+        void remap_index(std::vector<JPA_Texture> &textures);
 };
 class JPA_Texture {
     public:
@@ -245,12 +263,12 @@ class JPA_Resource {
     std::vector<JPA_KFA1> kfa1; // Key Blocks
     std::vector<JPA_TDB1> tdb1; // Texture Id to Texture Map
 
-    void update_resource_info();
+    void update_resource_info(std::string version, std::vector<JPA_Texture> &textures);
 };
 class JPAC {
     public:
     std::string version;
-    u16 block_count;
+    u16 resource_count;
     u16 texture_count;
     u32 texture_offset;
 
@@ -260,8 +278,8 @@ class JPAC {
     void add_texture(std::string &texture_name);
     void append_textures(std::string &path);
     void replace_texture(std::string &texture_name);
-    i32 get_resource_index();
-    void add_resource(JPA_Resource &resouce);
+    i32 get_resource_index(u16 id);
+    void add_resource(JPA_Resource &resource);
     void update();
 };
 

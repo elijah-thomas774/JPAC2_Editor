@@ -8,13 +8,13 @@
 
 
 
-Buffer toBuffer(JPA_BEM1&);
+Buffer toBuffer(JPA_BEM1&); // done
 Buffer toBuffer(JPA_BSP1&); // done
-Buffer toBuffer(JPA_ESP1&);
-Buffer toBuffer(JPA_ETX1&);
-Buffer toBuffer(JPA_SSP1&);
-Buffer toBuffer(JPA_FLD1&);
-Buffer toBuffer(JPA_KFA1&);
+Buffer toBuffer(JPA_ESP1&); // done
+Buffer toBuffer(JPA_ETX1&); // done
+Buffer toBuffer(JPA_SSP1&); // done
+Buffer toBuffer(JPA_FLD1&); // done
+Buffer toBuffer(JPA_KFA1&); // done
 Buffer toBuffer(JPA_TDB1&);
 Buffer toBuffer(JPA_Texture&);
 Buffer toBuffer(JPA_Resource&);

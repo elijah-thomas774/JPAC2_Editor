@@ -42,7 +42,6 @@ class Buffer {
         void write(u8 value);
         void write(u16 value);
         void write(u32 value);
-        void write(vec3s value);
 
         void write(std::vector<u8>  &value);
         void write(std::vector<u16> &value);
