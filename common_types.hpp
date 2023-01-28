@@ -28,4 +28,5 @@ union Color
     ColorValues values;
     u32 color_string;
 };
-#endif COMMON_TYPES_HPP
+
+#endif
