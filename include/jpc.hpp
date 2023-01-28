@@ -232,6 +232,12 @@ class JPA_KFA1 {
     std::vector<f32> keyValues;
     bool isLoopEnable;
 };
+class JPA_Texture {
+    public:
+        std::string name;
+        std::vector<u8> data;
+    void add_data(std::string& filename);
+};
 class JPA_TDB1 { // Maps to the texture names (index)
     public:
         std::vector<u16> textureIdx;
@@ -239,12 +245,6 @@ class JPA_TDB1 { // Maps to the texture names (index)
 
         void map_to_texture(std::vector<JPA_Texture> &textures);
         void remap_index(std::vector<JPA_Texture> &textures);
-};
-class JPA_Texture {
-    public:
-        std::string name;
-        std::vector<u8> data;
-    void add_data(std::string& filename);
 };
 class JPA_Resource {
     public:
@@ -277,6 +277,7 @@ class JPAC {
 
     void add_texture(std::string &texture_name);
     void append_textures(std::string &path);
+    void add_texture_data(std::string &path);
     void replace_texture(std::string &texture_name);
     i32 get_resource_index(u16 id);
     void add_resource(JPA_Resource &resource);

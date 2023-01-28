@@ -29,7 +29,7 @@ Buffer toBuffer(JPA_BEM1& bem1){
     block.write(bem1.volumeSize);
     block.write(bem1.divNumber);
     block.write(bem1.rateStep);
-    block.write(std::vector<u8>(3,0));
+    block.add_padding(3);
     assert(0x7C == block.data.size());
     return block;
 }
@@ -62,7 +62,7 @@ Buffer toBuffer(JPA_BSP1& bsp1){
     block.write(bsp1.anmRndm);
     block.write(bsp1.colorLoopOfstMask);
     block.write(bsp1.texIdxLoopOfstMask);
-    block.write(std::vector<u8>(3,0));
+    block.add_padding(3);
     if (bsp1.isEnableTexScrollAnm){
         block.write(bsp1.texInitTransX);
         block.write(bsp1.texInitTransY);
@@ -78,7 +78,7 @@ Buffer toBuffer(JPA_BSP1& bsp1){
     if(bsp1.texIdxAnimData.size() != 0){
         block.write(bsp1.texIdxAnimData);
         if (bsp1.texIdxAnimData.size()&3 != 0)
-            block.write(std::vector<u8>(4-bsp1.texIdxAnimData.size()&3));
+            block.add_padding(4-bsp1.texIdxAnimData.size()&3);
     }    
     if(bsp1.colorPrmAnimData.size() != 0){
         block.data.at(0xD) = block.data.size();
@@ -87,7 +87,7 @@ Buffer toBuffer(JPA_BSP1& bsp1){
             block.write(temp.second.color_string);
         }
         if (block.data.size()&3 != 0)
-            block.write(std::vector<u8>(4-block.data.size()&3,0));
+            block.add_padding(4-block.data.size()&3);
     }
     if(bsp1.colorEnvAnimData.size() != 0){
         block.data.at(0xF) = block.data.size();
@@ -96,7 +96,7 @@ Buffer toBuffer(JPA_BSP1& bsp1){
             block.write(temp.second.color_string);
         }
         if (block.data.size()&3 != 0)
-            block.write(std::vector<u8>(4-block.data.size()&3,0));
+            block.add_padding(4-block.data.size()&3);
     }
     return block;
 }
@@ -188,7 +188,7 @@ Buffer toBuffer(JPA_FLD1& fld1){
     block.write(fld1.enTime);
     block.write(fld1.disTime);
     block.write(fld1.cycle);
-    block.write(std::vector<u8>(3,0));
+    block.add_padding(3);
     assert(0x44 == block.data.size());
     return block;
 }
@@ -216,7 +216,7 @@ Buffer toBuffer(JPA_TDB1& tdb1){
     block.write(len);
     block.write(tdb1.textureIdx);
     if (block.data.size()&3 != 0)
-        block.write(std::vector<u8>(4-block.data.size()&3, 0));
+        block.add_padding(4-block.data.size()&3);
     return block;
 }
 Buffer toBuffer(JPA_Texture& texture){
@@ -227,7 +227,7 @@ Buffer toBuffer(JPA_Texture& texture){
     block.write((u32)0);
     for (i8 c: texture.name)
         block.write(c);
-    block.write(std::vector<u8>(20-texture.name.length(), 0));
+    block.add_padding(20-texture.name.length());
     block.write(texture.data);
     return block;
 }
@@ -239,22 +239,39 @@ Buffer toBuffer(JPA_Resource& resource){
     block.write(resource.keyBlockCount);
     block.write(resource.tdb1Count);
     block.write((u8)0);
-    for (auto& blk : resource.bem1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.fld1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.kfa1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.bsp1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.esp1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.ssp1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.etx1)
-        block.append(toBuffer(blk));
-    for (auto& blk : resource.tdb1)
-        block.append(toBuffer(blk));
+    Buffer temp;
+    for (auto& blk : resource.bem1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.fld1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.kfa1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.bsp1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.esp1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.ssp1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.etx1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
+    for (auto& blk : resource.tdb1){
+        temp = toBuffer(blk);
+        block.append(temp);
+    }
     return block;
 }
 Buffer toBuffer(JPAC& jpc){
@@ -268,7 +285,7 @@ Buffer toBuffer(JPAC& jpc){
     for (auto&res : jpc.resources)
         block.append(toBuffer(res));
     if (block.data.size()&0xF != 0)
-        block.write(std::vector<u8>(16-block.data.size()&0xF, 0));
+        block.add_padding(16-block.data.size()&0xF);
     u32 size = block.data.size();
     block.data.at(0xC) = (u8)((size >> 24) & 0xFF);
     block.data.at(0xD) = (u8)((size >> 16) & 0xFF);
@@ -279,8 +296,18 @@ Buffer toBuffer(JPAC& jpc){
     return block;
 }
 
-void write_buffer(std::string&, Buffer&);
+void write_buffer(std::string& out_file, Buffer& jpc){
+    std::ofstream output(out_file, std::ios::binary | std::ios::out);
+    if(output.is_open())
+    {
+        output.write((char*)&jpc.data.at(0), jpc.data.size());
+    }
+    else{
+        std::cout << "Could not open Jpc destination file" << std::endl;
+    }
+    output.close();
+}
 
-void edit_from_file(); // This will handle version differences by calling the respectice build func
+void edit_from_file();
 void load_from_file();
 void write_to_file();

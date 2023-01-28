@@ -6,8 +6,6 @@
 #include "jsonBase.hpp"
 //Functions i want to do here
 
-
-
 Buffer toBuffer(JPA_BEM1&); // done
 Buffer toBuffer(JPA_BSP1&); // done
 Buffer toBuffer(JPA_ESP1&); // done
@@ -15,12 +13,12 @@ Buffer toBuffer(JPA_ETX1&); // done
 Buffer toBuffer(JPA_SSP1&); // done
 Buffer toBuffer(JPA_FLD1&); // done
 Buffer toBuffer(JPA_KFA1&); // done
-Buffer toBuffer(JPA_TDB1&);
-Buffer toBuffer(JPA_Texture&);
-Buffer toBuffer(JPA_Resource&);
-Buffer toBuffer(JPAC&);
+Buffer toBuffer(JPA_TDB1&); // done
+Buffer toBuffer(JPA_Texture&); // done
+Buffer toBuffer(JPA_Resource&); // done 
+Buffer toBuffer(JPAC&); // done
 
-void write_buffer(std::string&, Buffer&);
+void write_buffer(std::string&, Buffer&); // done
 
 void edit_from_file(); // This will handle version differences by calling the respectice build func
 void load_from_file();

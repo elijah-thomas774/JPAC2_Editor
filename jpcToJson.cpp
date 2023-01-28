@@ -333,6 +333,7 @@ JPA_ETX1 read_ETX1_JPAC2_11(Buffer& block){
     etx1.indTextureID    = block.read_u8(0x4E);
     etx1.scale           = block.read_i8(0x4D);
     etx1.secondTextureID = !!(flags & 0x100) ? block.read_u8(0x4F) : -1;
+    return etx1;
 }
 JPA_SSP1 read_SSP1_JPAC2_11(Buffer& block){
     return read_SSP1_JPAC2_10(block);
@@ -452,12 +453,43 @@ JPAC read_JPAC(Buffer& rawJpc){
     {
         u32 textureStart = currOffset;
         currOffset += rawJpc.read_u32(textureStart+0x4); // size
-        jpc.textures.push_back(read_texture(rawJpc.read_slice(textureStart, currOffset)));        
+        Buffer tempp = rawJpc.read_slice(textureStart, currOffset);
+        jpc.textures.push_back(read_texture(tempp));        
     }
     for (auto& resource : jpc.resources)
         resource.tdb1.at(0).map_to_texture(jpc.textures);
+    return jpc;
 }
 
-void read_jpc(std::string &in_file, std::string out_file, std::string texture_folder);
-void write_json(std::string &out_file, JPAC &jpc);
-void dump_textures(std::string &texture_folder, JPA_Texture &textures);
+void read_jpc(std::string in_file, std::string out_file, std::string texture_dump_folder){
+    Buffer data(in_file); // reads in the file
+    JPAC jpc = read_JPAC(data);
+    write_json(out_file, jpc);
+    if (texture_dump_folder != "")
+        dump_textures(texture_dump_folder, jpc.textures);
+}
+void write_json(std::string &out_file, JPAC &jpc){
+    ordered_json j = to_json(jpc);
+    std::ofstream dest;
+    dest.open(out_file, std::ios::binary | std::ios::out);
+    dest << j;
+    dest.close();
+}
+void dump_textures(std::string &texture_folder, std::vector<JPA_Texture> &textures){
+    for (auto& texture : textures)
+    {
+        std::string textureName = texture_folder;
+        textureName.append(texture.name);
+        textureName.append(".bti");
+        std::ofstream texFile(textureName, std::ios::binary | std::ios::out);
+        if(texFile.is_open())
+        {
+            texFile.write((char*)&texture.data.at(0), texture.data.size());
+        }
+        else{
+            std::cout << "Could not open texture folder" << std::endl;
+            break;
+        }
+        texFile.close();
+    }
+}

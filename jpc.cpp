@@ -269,6 +269,9 @@ void JPAC::append_textures(std::string &path){
     // else add it
     update();
 }
+void JPAC::add_texture_data(std::string &path){
+    
+}
 void JPAC::replace_texture(std::string &texture_name){
     // folder
 }

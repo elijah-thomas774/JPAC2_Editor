@@ -1,5 +1,7 @@
 #include "buffer.hpp"
 #include "common_types.hpp"
+#include "jpcToJson.hpp"
+#include "jsonToJpc.hpp"
 #include <iomanip>
 #include <iostream>
 
@@ -26,5 +28,5 @@ void print_buffer(Buffer &buffer)
 
 int main()
 {
-
+    read_jpc("Common.jpc", "jpc.json", "dump\\");
 }

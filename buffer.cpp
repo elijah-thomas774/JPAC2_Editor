@@ -34,8 +34,8 @@ Buffer Buffer::read_slice(i32 offset, i32 end)
     return Buffer(temp);
 }
 
-void Buffer::append(Buffer &newBuff){
-    append(data);
+void Buffer::append(const Buffer &newBuff){
+    append(newBuff.data);
 }
 void Buffer::append(std::vector<u8> &dat){
     data.reserve(data.size() + dat.size());
@@ -73,6 +73,8 @@ u16   Buffer::read_u16  (i32 offset){
     return ((t1 << 8) | t2);
 }
 u32   Buffer::read_u32  (i32 offset){
+    if (!(data.size() > offset+3))
+        std::cout << std::hex << offset << std::endl;
     assert(data.size() > offset+3);
     u32 t1 = data.at(offset)   & 0xFF;
     u32 t2 = data.at(offset+1) & 0xFF;
@@ -168,6 +170,14 @@ std::vector<u32> Buffer::read_vec_u32(i32 offset, i32 n){
         temp.push_back(read_u32(offset+i));
     }
     return temp;
+}
+
+void Buffer::add_padding(i32 n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        write((u8)0);
+    }
 }
 
 void Buffer::write(f32 value){

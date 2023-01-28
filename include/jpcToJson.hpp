@@ -34,10 +34,10 @@ JPA_Resource read_resouce_JPAC2_11(Buffer& rawRes); // done
 
 JPA_Texture read_texture(Buffer& rawTexure); // done
 
-JPAC read_JPAC(Buffer& jpc);
+JPAC read_JPAC(Buffer& jpc); // done
 
-void read_jpc(std::string &in_file, std::string out_file, std::string texture_folder);
-void write_json(std::string &out_file, JPAC &jpc);
-void dump_textures(std::string &texture_folder, JPA_Texture &textures);
+void read_jpc(std::string in_file, std::string out_file, std::string texture_folder); // done
+void write_json(std::string &out_file, JPAC &jpc); // done
+void dump_textures(std::string &texture_folder, std::vector<JPA_Texture> &textures); // done
 
 #endif
