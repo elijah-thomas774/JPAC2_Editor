@@ -57,6 +57,7 @@ class JPA_BEM1 {
 
     void parse_flags();
     void build_flags();
+    JPA_BEM1 copy();
 };
 class JPA_BSP1 {
     public:
@@ -119,6 +120,7 @@ class JPA_BSP1 {
     void parse_flags_JPAC2_11();
     void build_flags_JPAC2_10();
     void build_flags_JPAC2_11();
+    JPA_BSP1 copy();
 };
 class JPA_ESP1 {
     public:
@@ -157,6 +159,7 @@ class JPA_ESP1 {
     f32 rotateDirection;
     void parse_flags();
     void build_flags();
+    JPA_ESP1 copy();
 };
 class JPA_ETX1 {
     public:
@@ -167,6 +170,7 @@ class JPA_ETX1 {
     i8 scale;
     u8 secondTextureID;
     u32 build_flags();
+    JPA_ETX1 copy();
 };
 class JPA_SSP1 {
     public:
@@ -203,6 +207,7 @@ class JPA_SSP1 {
 
     void build_flags();
     void parse_flags();
+    JPA_SSP1 copy();
 };
 class JPA_FLD1 {
     public:
@@ -223,6 +228,7 @@ class JPA_FLD1 {
 
     void parse_flags();
     void build_flags();
+    JPA_FLD1 copy();
 };
 class JPA_KFA1 {
     public:
@@ -231,6 +237,7 @@ class JPA_KFA1 {
     u8 unk0xA;
     std::vector<f32> keyValues;
     bool isLoopEnable;
+    JPA_KFA1 copy();
 };
 class JPA_Texture {
     public:
@@ -245,6 +252,7 @@ class JPA_TDB1 { // Maps to the texture names (index)
 
         void map_to_texture(std::vector<JPA_Texture> &textures);
         void remap_index(std::vector<JPA_Texture> &textures);
+    JPA_TDB1 copy();
 };
 class JPA_Resource {
     public:
@@ -277,9 +285,10 @@ class JPAC {
 
     void add_texture(std::string &texture_name);
     void append_textures(std::string &path);
-    void add_texture_data(std::string &path);
+    void add_texture_data(JPA_Texture &texture);
     i32 get_resource_index(u16 id);
     void add_resource(JPA_Resource &resource);
+    void apply_edits(JPAC&changes);
     void update();
 };
 

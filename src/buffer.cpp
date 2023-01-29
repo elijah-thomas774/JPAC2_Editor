@@ -34,11 +34,10 @@ Buffer Buffer::read_slice(i32 offset, i32 end)
     return Buffer(temp);
 }
 
-void Buffer::append(const Buffer &newBuff){
+void Buffer::append(Buffer &newBuff){
     append(newBuff.data);
 }
 void Buffer::append(std::vector<u8> &dat){
-    data.reserve(data.size() + dat.size());
     for (u8 temp : dat)
     {
         data.push_back(temp);

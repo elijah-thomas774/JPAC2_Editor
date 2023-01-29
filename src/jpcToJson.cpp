@@ -169,6 +169,7 @@ JPA_SSP1 read_SSP1_JPAC2_10(Buffer& block){
     assert(0x48 == block.data.size());
     JPA_SSP1 ssp1;
     ssp1.flags          = block.read_u32(0x08);
+    ssp1.parse_flags();
     ssp1.posRndm        = block.read_f32(0xC);
     ssp1.baseVel        = block.read_f32(0x10);
     ssp1.baseVelRndm    = block.read_f32(0x14);
@@ -469,6 +470,12 @@ void read_jpc(std::string in_file, std::string out_file, std::string texture_dum
     write_json(out_file, jpc);
     if (texture_dump_folder != "")
         dump_textures(texture_dump_folder, jpc.textures);
+}
+JPAC read_jpc(std::string in_file)
+{
+    Buffer data(in_file); // reads in the file
+    JPAC jpc = read_JPAC(data);
+    return jpc;
 }
 void write_json(std::string &out_file, JPAC &jpc){
     ordered_json j = to_json(jpc);

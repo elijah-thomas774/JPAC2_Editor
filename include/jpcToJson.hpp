@@ -39,5 +39,5 @@ JPAC read_JPAC(Buffer& jpc); // done
 void read_jpc(std::string in_file, std::string out_file, std::string texture_folder); // done
 void write_json(std::string &out_file, JPAC &jpc); // done
 void dump_textures(std::string &texture_folder, std::vector<JPA_Texture> &textures); // done
-
+JPAC read_jpc(std::string in_file);
 #endif

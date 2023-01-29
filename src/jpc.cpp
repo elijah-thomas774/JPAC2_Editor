@@ -75,6 +75,8 @@ void JPA_BSP1::build_flags_JPAC2_10(){
     flags = 0;
     flags |= (shapeType & 0xF);
     flags |= (dirType   & 0x7) << 4;
+    flags |= (rotType   & 0x7) << 7;
+    flags |= (planeType & 0x1) << 10;
     flags |= tilingS                ? 0x02000000 : 0;
     flags |= tilingT                ? 0x04000000 : 0;
     flags |= isNoDrawParent         ? 0x08000000 : 0;
@@ -108,6 +110,8 @@ void JPA_BSP1::build_flags_JPAC2_11(){
     flags = 0;
     flags |= (shapeType & 0xF);
     flags |= (dirType   & 0x7) << 4;
+    flags |= (rotType   & 0x7) << 7;
+    flags |= (planeType & 0x1) << 10;
     flags |= tilingS                ? 0x08000000 : 0;
     flags |= tilingT                ? 0x10000000 : 0;
     flags |= isNoDrawParent         ? 0x20000000 : 0;
@@ -180,7 +184,7 @@ void JPA_SSP1::parse_flags(){
 }
 void JPA_SSP1::build_flags(){
     flags = 0;
-    flags |= (shapeType & 0xFF);
+    flags |= (shapeType & 0xF);
     flags |= (dirType & 0x7) << 4;
     flags |= (rotType & 0x7) << 7;
     flags |= (planeType & 0x1) << 10; 
@@ -208,6 +212,9 @@ void JPA_FLD1::build_flags(){
 }
 
 void JPA_TDB1::map_to_texture(std::vector<JPA_Texture> &textures){
+    if (textureIdx.size() == 0)
+        return;
+    this->textures.clear();
     for (u16 idx : textureIdx)
     {
         this->textures.push_back(textures.at(idx).name);
@@ -232,16 +239,6 @@ void JPA_TDB1::remap_index(std::vector<JPA_Texture> &textures){
 }
 
 void JPA_Resource::update_resource_info(std::string version, std::vector<JPA_Texture> &textures){
-    u16 blkCnt = 0;
-    blockCount += bem1.size();
-    blockCount += bsp1.size();
-    blockCount += esp1.size();
-    blockCount += etx1.size();
-    blockCount += ssp1.size();
-    blockCount += fld1.size();
-    blockCount += kfa1.size();
-    blockCount += tdb1.size();
-    blockCount = blkCnt;
     fieldBlockCount = fld1.size();
     keyBlockCount = kfa1.size();
     tdb1.at(0).map_to_texture(textures);
@@ -259,6 +256,16 @@ void JPA_Resource::update_resource_info(std::string version, std::vector<JPA_Tex
         if (bsp1.size() != 0)
             bsp1.at(0).build_flags_JPAC2_11();   
     }
+    u16 blkCnt = 0;
+    blkCnt += bem1.size();
+    blkCnt += bsp1.size();
+    blkCnt += esp1.size();
+    blkCnt += etx1.size();
+    blkCnt += ssp1.size();
+    blkCnt += fld1.size();
+    blkCnt += kfa1.size();
+    blkCnt += tdb1.size();
+    blockCount = blkCnt;
 }
 
 void JPAC::append_textures(std::string &path){
@@ -266,38 +273,36 @@ void JPAC::append_textures(std::string &path){
     {
         auto& path = entry.path();
         if (path.extension().compare(".bti") == 0){
+            // std::cout << "found texture: " << path.stem().string() << std::endl;
             JPA_Texture tex;
             tex.name = path.stem().string();
             std::ifstream bti_file(entry.path().string(), std::ios::binary | std::ios::in);
-            i32 size = bti_file.tellg();
-            tex.data = std::vector<u8>(size);
-            bti_file.seekg(0, std::ios::beg);
-            bti_file.read((char *)&tex.data[0], size);
-            bti_file.close();
+            if (bti_file.is_open()){
+                i32 size = entry.file_size();
+                tex.data = std::vector<u8>(size, 0);
+                bti_file.seekg(0, std::ios::beg);
+                bti_file.read((char *)&tex.data[0], size);
+                add_texture_data(tex);
+                bti_file.close();
+            }
+            else {
+                std::cout << "Could not open file: " << entry.path().string() << std::endl;
+            }
         }
     }
     update();
 }
-void JPAC::add_texture_data(std::string &path){
+void JPAC::add_texture_data(JPA_Texture &texture){
     for (JPA_Texture &tex : textures)
     {
-        std::string texture_name = path;
-        texture_name.append(tex.name);
-        texture_name.append(".bti");
-        std::ifstream bti_file;
-        bti_file.open(texture_name, std::ios::in | std::ios::binary);
-        if (bti_file.is_open())
+        if(tex.name.compare(texture.name) == 0)
         {
-            i32 size = bti_file.tellg();
-            tex.data = std::vector<u8>(size);
-            bti_file.seekg(0, std::ios::beg);
-            bti_file.read((char *)&tex.data[0], size);
-            bti_file.close();
-        }   
-        else{
-            std::cout << "Could not find file with name: " << tex.name << std::endl;
+            tex.data = std::vector<u8>(texture.data);
+            return;
         }
-    }    
+    }
+    std::cout << "Appending Texture: " << texture.name << std::endl;
+    textures.push_back(texture);
 }
 
 i32  JPAC::get_resource_index(u16 id){
@@ -307,8 +312,9 @@ i32  JPAC::get_resource_index(u16 id){
             return i;
     }
     std::cout << "Could Not Find Resource with ID: " << std::hex << id << std::endl;
-    assert(!"Resource Id Error");
-    return 0;
+    std::cout << "This will add it to the end as a new resource" << std::endl;
+    // assert(!"Resource Id Error");
+    return -1;
 }
 void JPAC::add_resource(JPA_Resource &resource){
     resources.push_back(resource);
@@ -320,4 +326,18 @@ void JPAC::update(){
     resource_count = resources.size();
     texture_count = textures.size();
     // texture offset will be generated upon resouce creation
+}
+
+void JPAC::apply_edits(JPAC&changes){
+    assert(changes.version.compare(version) == 0); // Same Version
+    for (auto& resource : changes.resources)
+    {
+        i32 index = get_resource_index(resource.resourceId);
+        if (index != -1) 
+            resources.at(index) = resource;
+        else
+            resources.push_back(resource);
+    }
+    // TODO : make sure changes are ok?
+    update();
 }

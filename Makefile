@@ -1,7 +1,7 @@
 test: buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o
 	g++ buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o -o test -Iinclude\\ -Wno-multichar
 
-main.o: src\main.cpp
+main.o: src\\main.cpp
 	g++ -c src\\main.cpp -Iinclude\\ -Wno-multichar
 buffer.o: src\\buffer.cpp include\\buffer.hpp
 	g++ -c src\\buffer.cpp -Iinclude\\ -Wno-multichar
@@ -14,5 +14,10 @@ jpcToJson.o: src\\jpcToJson.cpp include\\jpcToJson.hpp
 jpc.o: src\\jpc.cpp include\\jpc.hpp 
 	g++ -c src\\jpc.cpp -Iinclude\\ -Wno-multichar
 
+debug:
+	g++ src\\*.cpp -o debug -Iinclude\\ -Wno-multichar -g
+
+all: 
+	g++ src\\*.cpp -o test -Iinclude\\ -Wno-multichar -g
 clean:
 	-rm -f *.o core *.core

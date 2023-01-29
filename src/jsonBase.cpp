@@ -1,4 +1,24 @@
 #include "jsonBase.hpp"
+bool exists(json &j, std::string entry)
+{
+    return (j.find(entry) != j.end());
+}
+std::string get_if_exists(json &j, std::string entry, std::string default_val){
+    if (exists(j, entry)){
+        std::string tempVal = j[entry];
+        return tempVal;}
+    else
+        return default_val;
+}
+template<typename T>
+T get_if_exists(json &j, std::string entry, T default_val){
+    if (exists(j, entry))
+        return j[entry].get<T>();
+    else
+        return default_val;
+}
+
+
 std::string to_volume_type(u8 val)
 {
     switch (val)
@@ -40,6 +60,7 @@ std::string to_dir_type(u8 val){
         case 2: return "PosInv";
         case 3: return "EmtrDir";
         case 4: return "PrevPctl";
+        case 5: return "Unk5";
         default:
             return std::to_string(val);
     }
@@ -143,8 +164,10 @@ std::string to_key_type(u8 val){
     }
 }
 
-u8 from_volume_type(std::string val)
-{
+u8 from_volume_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if(val.compare("Cube") == 0)          return 0;
     else if(val.compare("Sphere") == 0)   return 1;
     else if(val.compare("Cylinder") == 0) return 2;
@@ -154,7 +177,10 @@ u8 from_volume_type(std::string val)
     else if(val.compare("Line") == 0)     return 6;
     return 0;
 }
-u8 from_shape_type(std::string val){
+u8 from_shape_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Point") == 0) return 0;
     else if (val.compare("Line") == 0) return 1;
     else if (val.compare("Billboard") == 0) return 2;
@@ -168,15 +194,22 @@ u8 from_shape_type(std::string val){
     else if (val.compare("YBillboard") == 0) return 10;
     return 0;
 }
-u8 from_dir_type(std::string val){
+u8 from_dir_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Vel") == 0) return 0;
     else if (val.compare("Pos") == 0) return 1;
     else if (val.compare("PosInv") == 0) return 2;
     else if (val.compare("EmtrDir") == 0) return 3;
     else if (val.compare("PrevPctl") == 0) return 4;
+    else if (val.compare("Unk5") == 0) return 5;
     return 0;
 }
-u8 from_rot_type(std::string val){
+u8 from_rot_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Y") == 0) return 0;
     else if (val.compare("X") == 0) return 1;
     else if (val.compare("Z") == 0) return 2;
@@ -184,13 +217,19 @@ u8 from_rot_type(std::string val){
     else if (val.compare("YJiggle") == 0) return 4;
     return 0;
 }
-u8 from_plane_type(std::string val){
+u8 from_plane_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("XY") == 0) return 0;
     else if (val.compare("XZ") == 0) return 1;
     else if (val.compare("X") == 0) return 2;
     return 0;
 }
-u8 from_calc_idx_type(std::string val){
+u8 from_calc_idx_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Normal") == 0) return 0;
     else if (val.compare("Repeat") == 0) return 1;
     else if (val.compare("Reverse") == 0) return 2;
@@ -198,19 +237,28 @@ u8 from_calc_idx_type(std::string val){
     else if (val.compare("Random") == 0) return 4;
     return 0;
 }
-u8 from_calc_scale_anm_type(std::string val){
+u8 from_calc_scale_anm_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Normal") == 0) return 0;
     else if (val.compare("Repeat") == 0) return 1;
     else if (val.compare("Reverse") == 0) return 2;
     return 0;
 }
-u8 from_ind_texture_mode(std::string val){
+u8 from_ind_texture_mode(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Off") == 0) return 0;
     else if (val.compare("Normal") == 0) return 1;
     else if (val.compare("Sub") == 0) return 2;
     return 0;
 }
-u8 from_field_type(std::string val){
+u8 from_field_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Gravity") == 0) return 0;
     else if (val.compare("Air") == 0) return 1;
     else if (val.compare("Magnet") == 0) return 2;
@@ -222,13 +270,19 @@ u8 from_field_type(std::string val){
     else if (val.compare("Spin") == 0) return 8;
     return 0;
 }
-u8 from_field_add_type(std::string val){
+u8 from_field_add_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("FieldAccel") == 0) return 0;
     else if (val.compare("BaseVelocity") == 0) return 1;
     else if (val.compare("FieldVelocity") == 0) return 2;
     return 0;
 }
-u8 from_key_type(std::string val){
+u8 from_key_type(json &j, std::string field, u8 orig){
+    if (!exists(j, field))
+        return orig;
+    std::string val = j[field].get<std::string>();
     if (val.compare("Rate") == 0) return  0;
     else if (val.compare("VolumeSize") == 0) return  1;
     else if (val.compare("VolumeSweep") == 0) return  2;
@@ -264,16 +318,30 @@ ordered_json to_color_table(std::vector<std::pair<u16, Color>> data){
     }
     return j;
 }
-std::vector<std::pair<u16, Color>> from_color_table(json &j){
-    std::vector<std::pair<u16, Color>> result;
-    for (std::pair<u16, std::string> color : j)
+Color get_color_from_json(json& j, std::string field, Color orig){
+    if (!exists(j, field))
+        return orig;
+    
+    std::string color_str = j[field].get<std::string>();
+    return from_color(color_str);
+}
+std::vector<std::pair<u16, Color>> from_color_table(json &j, std::string field, std::vector<std::pair<u16, Color>> orig){
+    if (!exists(j, field))
+        return orig;
+    std::vector<std::pair<u16, Color>> table;
+    u32 num_entries = j[field].size();
+    json &colors = j[field];
+    for(i32 i = 0; i < num_entries; i++)
     {
-        result.push_back({
-            color.first,
-            from_color(color.second)
-        });
+        assert(exists(colors[i], "time"));
+        assert(exists(colors[i], "color"));
+        Color tempColor;
+        tempColor.color_string = 0xFFFFFFFF;
+        Color currColor = get_color_from_json(colors[i], "color", tempColor);
+        u16 time = colors[i]["time"].get<u16>();
+        table.push_back({time, currColor});
     }
-    return result;
+    return table;
 }
 
 ordered_json to_json(JPA_BEM1& bem1){
@@ -518,299 +586,311 @@ ordered_json to_json(JPAC& jpc){
 }
 JPA_BEM1 read_BEM1_from_json(json& j, JPA_BEM1 &orig){
     JPA_BEM1 bem1;
-    bem1.unkFlags          = j.value("unkFlags", orig.unkFlags);
-    std::string volumeType = j.value("volumeType", "None");
-    bem1.volumeType = from_volume_type(volumeType);
-    bem1.emitterScl        = j.value("emitterScl", orig.emitterScl);
-    bem1.emitterRot        = j.value("emitterRot", orig.emitterRot);
-    bem1.emitterTrs        = j.value("emitterTrs", orig.emitterTrs);
-    bem1.emitterDir        = j.value("emitterDir", orig.emitterDir);
-    bem1.initialVelOmni    = j.value("initialVelOmni", orig.initialVelOmni);
-    bem1.initialVelAxis    = j.value("initialVelAxis", orig.initialVelAxis);
-    bem1.initialVelRndm    = j.value("initialVelRndm", orig.initialVelRndm);
-    bem1.initialVelDir     = j.value("initialVelDir", orig.initialVelDir);  
-    bem1.spread            = j.value("spread", orig.spread);
-    bem1.initialVelRatio   = j.value("initialVelRatio", orig.initialVelRatio);
-    bem1.rate              = j.value("rate", orig.rate);
-    bem1.rateRndm          = j.value("rateRndm", orig.rateRndm);
-    bem1.lifeTimeRndm      = j.value("lifeTimeRndm", orig.lifeTimeRndm);
-    bem1.volumeSweep       = j.value("volumeSweep", orig.volumeSweep);
-    bem1.volumeMinRad      = j.value("volumeMinRad", orig.volumeMinRad);
-    bem1.airResist         = j.value("airResist", orig.airResist);
-    bem1.momentRndm        = j.value("momentRndm", orig.momentRndm);
-    bem1.maxFrame          = j.value("maxFrame", orig.maxFrame);
-    bem1.startFrame        = j.value("startFrame", orig.startFrame);
-    bem1.lifeTime          = j.value("lifeTime", orig.lifeTime);
-    bem1.volumeSize        = j.value("volumeSize", orig.volumeSize);
-    bem1.divNumber         = j.value("divNumber", orig.divNumber);
-    bem1.rateStep          = j.value("rateStep", orig.rateStep);
+    bem1.unkFlags          = get_if_exists(j, "unkFlags", orig.unkFlags);
+    bem1.unkEmitFlags      = get_if_exists(j, "emitFlags", orig.unkFlags);
+    bem1.volumeType        = from_volume_type(j, "volumeType", orig.volumeType);
+    bem1.emitterScl        = get_if_exists(j, "emitterScl", orig.emitterScl);
+    bem1.emitterRot        = get_if_exists(j, "emitterRot", orig.emitterRot);
+    bem1.emitterTrs        = get_if_exists(j, "emitterTrs", orig.emitterTrs);
+    bem1.emitterDir        = get_if_exists(j, "emitterDir", orig.emitterDir);
+    bem1.initialVelOmni    = get_if_exists(j, "initialVelOmni", orig.initialVelOmni);
+    bem1.initialVelAxis    = get_if_exists(j, "initialVelAxis", orig.initialVelAxis);
+    bem1.initialVelRndm    = get_if_exists(j, "initialVelRndm", orig.initialVelRndm);
+    bem1.initialVelDir     = get_if_exists(j, "initialVelDir", orig.initialVelDir);  
+    bem1.spread            = get_if_exists(j, "spread", orig.spread);
+    bem1.initialVelRatio   = get_if_exists(j, "initialVelRatio", orig.initialVelRatio);
+    bem1.rate              = get_if_exists(j, "rate", orig.rate);
+    bem1.rateRndm          = get_if_exists(j, "rateRndm", orig.rateRndm);
+    bem1.lifeTimeRndm      = get_if_exists(j, "lifeTimeRndm", orig.lifeTimeRndm);
+    bem1.volumeSweep       = get_if_exists(j, "volumeSweep", orig.volumeSweep);
+    bem1.volumeMinRad      = get_if_exists(j, "volumeMinRad", orig.volumeMinRad);
+    bem1.airResist         = get_if_exists(j, "airResist", orig.airResist);
+    bem1.momentRndm        = get_if_exists(j, "momentRndm", orig.momentRndm);
+    bem1.maxFrame          = get_if_exists(j, "maxFrame", orig.maxFrame);
+    bem1.startFrame        = get_if_exists(j, "startFrame", orig.startFrame);
+    bem1.lifeTime          = get_if_exists(j, "lifeTime", orig.lifeTime);
+    bem1.volumeSize        = get_if_exists(j, "volumeSize", orig.volumeSize);
+    bem1.divNumber         = get_if_exists(j, "divNumber", orig.divNumber);
+    bem1.rateStep          = get_if_exists(j, "rateStep", orig.rateStep);
     bem1.build_flags();
     return bem1;
 }
 JPA_BSP1 read_BSP1_from_json(json& j, JPA_BSP1 &orig){
     JPA_BSP1 bsp1;
-    bsp1.unkVar1 = j.value("unkVar1", orig.unkVar1);                 
-    bsp1.unkVar2 = j.value("unkVar2", orig.unkVar2);                 
-    bsp1.unkVar3 = j.value("unkVar3", orig.unkVar3);                 
-    bsp1.unkVar4 = j.value("unkVar4", orig.unkVar4);                 
-    bsp1.unkVar5 = j.value("unkVar5", orig.unkVar5);                 
-    bsp1.unkColorFlag1 = j.value("unkColorFlag1", orig.unkColorFlag1);           
-    bsp1.unkColorFlag2 = j.value("unkColorFlag2", orig.unkColorFlag2);           
-    bsp1.shapeType  = from_shape_type(j.value("shapeType", to_shape_type(orig.shapeType)));
-    bsp1.dirType    = from_dir_type(j.value("dirType",   to_dir_type(orig.dirType)));
-    bsp1.rotType    = from_rot_type(j.value("rotType",   to_rot_type(orig.rotType)));
-    bsp1.planeType  = from_plane_type(j.value("planeType", to_plane_type(orig.planeType)));
-    bsp1.baseSize = j.value("baseSize", orig.baseSize);                
-    bsp1.tilingS = j.value("tilingS", orig.tilingS);                 
-    bsp1.tilingT = j.value("tilingT", orig.tilingT);                 
-    bsp1.isDrawFwdAhead = j.value("isDrawFwdAhead", orig.isDrawFwdAhead);          
-    bsp1.isDrawPrntAhead = j.value("isDrawPrntAhead", orig.isDrawPrntAhead);         
-    bsp1.isNoDrawParent = j.value("isNoDrawParent", orig.isNoDrawParent);          
-    bsp1.isNoDrawChild = j.value("isNoDrawChild", orig.isNoDrawChild);           
-    bsp1.colorInSelect = j.value("colorInSelect", orig.colorInSelect);           
-    bsp1.alphaInSelect = j.value("alphaInSelect", orig.alphaInSelect);           
-    bsp1.blendModeFlags = j.value("blendModeFlags", orig.blendModeFlags);          
-    bsp1.alphaCompareFlags = j.value("alphaCompareFlags", orig.alphaCompareFlags);       
-    bsp1.alphaRef0 = j.value("alphaRef0", orig.alphaRef0);               
-    bsp1.alphaRef1 = j.value("alphaRef1", orig.alphaRef1);               
-    bsp1.zModeFlags = j.value("zModeFlags", orig.zModeFlags);              
-    bsp1.anmRndm = j.value("anmRndm", orig.anmRndm);                 
-    bsp1.isGlblTexAnm = j.value("isGlblTexAnm", orig.isGlblTexAnm);            
-    bsp1.texCalcIdxType = j.value("texCalcIdxType", orig.texCalcIdxType);          
-    bsp1.texIdx = j.value("texIdx", orig.texIdx);                  
-    bsp1.texIdxAnimData = j.value("texIdxAnimData", orig.texIdxAnimData);          
-    bsp1.texIdxLoopOfstMask = j.value("texIdxLoopOfstMask", orig.texIdxLoopOfstMask);      
-    bsp1.isEnableProjection = j.value("isEnableProjection", orig.isEnableProjection);      
-    bsp1.isEnableTexScrollAnm = j.value("isEnableTexScrollAnm", orig.isEnableTexScrollAnm);    
-    bsp1.texInitTransX = j.value("texInitTransX", orig.texInitTransX);           
-    bsp1.texInitTransY = j.value("texInitTransY", orig.texInitTransY);           
-    bsp1.texInitScaleX = j.value("texInitScaleX", orig.texInitScaleX);           
-    bsp1.texInitScaleY = j.value("texInitScaleY", orig.texInitScaleY);           
-    bsp1.texInitRot = j.value("texInitRot", orig.texInitRot);              
-    bsp1.texIncTransX = j.value("texIncTransX", orig.texIncTransX);            
-    bsp1.texIncTransY = j.value("texIncTransY", orig.texIncTransY);            
-    bsp1.texIncScaleX = j.value("texIncScaleX", orig.texIncScaleX);            
-    bsp1.texIncScaleY = j.value("texIncScaleY", orig.texIncScaleY);            
-    bsp1.texIncRot = j.value("texIncRot", orig.texIncRot);               
-    bsp1.isGlblClrAnm = j.value("isGlblClrAnm", orig.isGlblClrAnm);            
-    bsp1.colorCalcIdxType = j.value("colorCalcIdxType", orig.colorCalcIdxType);
-    std::string colorPrm =j.value("colorPrm", to_color(orig.colorPrm));        
-    std::string colorEnv =j.value("colorEnv", to_color(orig.colorEnv));        
-    bsp1.colorPrm = from_color(colorPrm);
-    bsp1.colorEnv = from_color(colorEnv);
-    json j1 = to_color_table(orig.colorPrmAnimData);
-    json j2 = to_color_table(orig.colorEnvAnimData);
-    j1 = j.value("colorPrmAnimData", j1);
-    j2 = j.value("colorEnvAnimData", j2);
-    bsp1.colorPrmAnimData = from_color_table(j1);
-    bsp1.colorEnvAnimData = from_color_table(j2);
-    bsp1.colorAnimMaxFrm = j.value("colorAnimMaxFrm", orig.colorAnimMaxFrm);         
-    bsp1.colorLoopOfstMask = j.value("colorLoopOfstMask", orig.colorLoopOfstMask);   
+    bsp1.unkVar1 = get_if_exists(j, "unkVar1", orig.unkVar1);                 
+    bsp1.unkVar2 = get_if_exists(j, "unkVar2", orig.unkVar2);                 
+    bsp1.unkVar3 = get_if_exists(j, "unkVar3", orig.unkVar3);                 
+    bsp1.unkVar4 = get_if_exists(j, "unkVar4", orig.unkVar4);                 
+    bsp1.unkVar5 = get_if_exists(j, "unkVar5", orig.unkVar5);                 
+    bsp1.unkColorFlag1 = get_if_exists(j, "unkColorFlag1", orig.unkColorFlag1);           
+    bsp1.unkColorFlag2 = get_if_exists(j, "unkColorFlag2", orig.unkColorFlag2);           
+    bsp1.shapeType  = from_shape_type(j, "shapeType", orig.shapeType);
+    bsp1.dirType    = from_dir_type(j, "dirType",   orig.dirType);
+    bsp1.rotType    = from_rot_type(j, "rotType",   orig.rotType);
+    bsp1.planeType  = from_plane_type(j, "planeType", orig.planeType);
+    bsp1.baseSize = get_if_exists(j, "baseSize", orig.baseSize);
+    bsp1.tilingS = get_if_exists(j, "tilingS", orig.tilingS);  
+    bsp1.tilingT = get_if_exists(j, "tilingT", orig.tilingT);  
+    bsp1.isDrawFwdAhead = get_if_exists(j, "isDrawFwdAhead", orig.isDrawFwdAhead);
+    bsp1.isDrawPrntAhead = get_if_exists(j, "isDrawPrntAhead", orig.isDrawPrntAhead);
+    bsp1.isNoDrawParent = get_if_exists(j, "isNoDrawParent", orig.isNoDrawParent);
+    bsp1.isNoDrawChild = get_if_exists(j, "isNoDrawChild", orig.isNoDrawChild);
+    bsp1.colorInSelect = get_if_exists(j, "colorInSelect", orig.colorInSelect);
+    bsp1.alphaInSelect = get_if_exists(j, "alphaInSelect", orig.alphaInSelect);
+    bsp1.blendModeFlags = get_if_exists(j, "blendModeFlags", orig.blendModeFlags);
+    bsp1.alphaCompareFlags = get_if_exists(j, "alphaCompareFlags", orig.alphaCompareFlags);
+    bsp1.alphaRef0 = get_if_exists(j, "alphaRef0", orig.alphaRef0);               
+    bsp1.alphaRef1 = get_if_exists(j, "alphaRef1", orig.alphaRef1);               
+    bsp1.zModeFlags = get_if_exists(j, "zModeFlags", orig.zModeFlags);              
+    bsp1.anmRndm = get_if_exists(j, "anmRndm", orig.anmRndm);                 
+    bsp1.isGlblTexAnm = get_if_exists(j, "isGlblTexAnm", orig.isGlblTexAnm);            
+    bsp1.texCalcIdxType = get_if_exists(j, "texCalcIdxType", orig.texCalcIdxType);          
+    bsp1.texIdx = get_if_exists(j, "texIdx", orig.texIdx);                  
+    bsp1.texIdxAnimData = get_if_exists(j, "texIdxAnimData", orig.texIdxAnimData);          
+    bsp1.texIdxLoopOfstMask = get_if_exists(j, "texIdxLoopOfstMask", orig.texIdxLoopOfstMask);      
+    bsp1.isEnableProjection = get_if_exists(j, "isEnableProjection", orig.isEnableProjection);      
+    bsp1.isEnableTexScrollAnm = get_if_exists(j, "isEnableTexScrollAnm", orig.isEnableTexScrollAnm);    
+    bsp1.texInitTransX = get_if_exists(j, "texInitTransX", orig.texInitTransX);           
+    bsp1.texInitTransY = get_if_exists(j, "texInitTransY", orig.texInitTransY);           
+    bsp1.texInitScaleX = get_if_exists(j, "texInitScaleX", orig.texInitScaleX);           
+    bsp1.texInitScaleY = get_if_exists(j, "texInitScaleY", orig.texInitScaleY);           
+    bsp1.texInitRot = get_if_exists(j, "texInitRot", orig.texInitRot);              
+    bsp1.texIncTransX = get_if_exists(j, "texIncTransX", orig.texIncTransX);            
+    bsp1.texIncTransY = get_if_exists(j, "texIncTransY", orig.texIncTransY);            
+    bsp1.texIncScaleX = get_if_exists(j, "texIncScaleX", orig.texIncScaleX);            
+    bsp1.texIncScaleY = get_if_exists(j, "texIncScaleY", orig.texIncScaleY);            
+    bsp1.texIncRot = get_if_exists(j, "texIncRot", orig.texIncRot);               
+    bsp1.isGlblClrAnm = get_if_exists(j, "isGlblClrAnm", orig.isGlblClrAnm);            
+    bsp1.colorCalcIdxType = get_if_exists(j, "colorCalcIdxType", orig.colorCalcIdxType);     
+    bsp1.colorPrm = get_color_from_json(j, "colorPrm", orig.colorPrm);
+    bsp1.colorEnv = get_color_from_json(j, "colorEnv", orig.colorEnv);
+    bsp1.colorPrmAnimData = from_color_table(j, "colorPrmAnimData", orig.colorPrmAnimData);
+    bsp1.colorEnvAnimData = from_color_table(j, "colorEnvAnimData", orig.colorEnvAnimData);
+    bsp1.colorAnimMaxFrm = get_if_exists(j, "colorAnimMaxFrm", orig.colorAnimMaxFrm);         
+    bsp1.colorLoopOfstMask = get_if_exists(j, "colorLoopOfstMask", orig.colorLoopOfstMask);   
     return bsp1;    
 }
 JPA_ESP1 read_ESP1_from_json(json& j, JPA_ESP1 &orig){
     JPA_ESP1 esp1;
-    esp1.unkFlags = j.value("unkFlags", orig.unkFlags);
-    esp1.isEnableScale = j.value("isEnableScale", orig.isEnableScale);
-    esp1.isDiffXY = j.value("isDiffXY", orig.isDiffXY);
-    esp1.scaleAnmTypeX = from_calc_scale_anm_type(j.value("scaleAnmTypeX", to_calc_scale_anm_type(orig.scaleAnmTypeX)));
-    esp1.scaleAnmTypeY = from_calc_scale_anm_type(j.value("scaleAnmTypeY", to_calc_scale_anm_type(orig.scaleAnmTypeY)));
-    esp1.isEnableRotate = j.value("isEnableRotate", orig.isEnableRotate);
-    esp1.isEnableAlpha = j.value("isEnableAlpha", orig.isEnableAlpha);
-    esp1.isEnableSinWave = j.value("isEnableSinWave", orig.isEnableSinWave);
-    esp1.pivotX = j.value("pivotX", orig.pivotX);
-    esp1.pivotY = j.value("pivotY", orig.pivotY);
-    esp1.scaleInTiming = j.value("scaleInTiming", orig.scaleInTiming);
-    esp1.scaleOutTiming = j.value("scaleOutTiming", orig.scaleOutTiming);
-    esp1.scaleInValueX = j.value("scaleInValueX", orig.scaleInValueX);
-    esp1.scaleOutValueX = j.value("scaleOutValueX", orig.scaleOutValueX);
-    esp1.scaleInValueY = j.value("scaleInValueY", orig.scaleInValueY);
-    esp1.scaleOutValueY = j.value("scaleOutValueY", orig.scaleOutValueY);
-    esp1.scaleOutRandom = j.value("scaleOutRandom", orig.scaleOutRandom);
-    esp1.scaleAnmMaxFrameX = j.value("scaleAnmMaxFrameX", orig.scaleAnmMaxFrameX);
-    esp1.scaleAnmMaxFrameY = j.value("scaleAnmMaxFrameY", orig.scaleAnmMaxFrameY);
-    esp1.alphaInTiming = j.value("alphaInTiming", orig.alphaInTiming);
-    esp1.alphaOutTiming = j.value("alphaOutTiming", orig.alphaOutTiming);
-    esp1.alphaInValue = j.value("alphaInValue", orig.alphaInValue);
-    esp1.alphaBaseValue = j.value("alphaBaseValue", orig.alphaBaseValue);
-    esp1.alphaOutValue = j.value("alphaOutValue", orig.alphaOutValue);
-    esp1.alphaWaveRandom = j.value("alphaWaveRandom", orig.alphaWaveRandom);
-    esp1.alphaWaveFrequency = j.value("alphaWaveFrequency", orig.alphaWaveFrequency);
-    esp1.alphaWaveAmplitude = j.value("alphaWaveAmplitude", orig.alphaWaveAmplitude);
-    esp1.rotateAngle = j.value("rotateAngle", orig.rotateAngle);
-    esp1.rotateAngleRandom = j.value("rotateAngleRandom", orig.rotateAngleRandom);
-    esp1.rotateSpeed = j.value("rotateSpeed", orig.rotateSpeed);
-    esp1.rotateSpeedRandom = j.value("rotateSpeedRandom", orig.rotateSpeedRandom);
-    esp1.rotateDirection = j.value("rotateDirection", orig.rotateDirection);
+    esp1.unkFlags = get_if_exists(j, "unkFlags", orig.unkFlags);
+    esp1.isEnableScale = get_if_exists(j, "isEnableScale", orig.isEnableScale);
+    esp1.isDiffXY = get_if_exists(j, "isDiffXY", orig.isDiffXY);
+    esp1.scaleAnmTypeX = from_calc_scale_anm_type(j, "scaleAnmTypeX", orig.scaleAnmTypeX);
+    esp1.scaleAnmTypeY = from_calc_scale_anm_type(j, "scaleAnmTypeY", orig.scaleAnmTypeY);
+    esp1.isEnableRotate = get_if_exists(j, "isEnableRotate", orig.isEnableRotate);
+    esp1.isEnableAlpha = get_if_exists(j, "isEnableAlpha", orig.isEnableAlpha);
+    esp1.isEnableSinWave = get_if_exists(j, "isEnableSinWave", orig.isEnableSinWave);
+    esp1.pivotX = get_if_exists(j, "pivotX", orig.pivotX);
+    esp1.pivotY = get_if_exists(j, "pivotY", orig.pivotY);
+    esp1.scaleInTiming = get_if_exists(j, "scaleInTiming", orig.scaleInTiming);
+    esp1.scaleOutTiming = get_if_exists(j, "scaleOutTiming", orig.scaleOutTiming);
+    esp1.scaleInValueX = get_if_exists(j, "scaleInValueX", orig.scaleInValueX);
+    esp1.scaleOutValueX = get_if_exists(j, "scaleOutValueX", orig.scaleOutValueX);
+    esp1.scaleInValueY = get_if_exists(j, "scaleInValueY", orig.scaleInValueY);
+    esp1.scaleOutValueY = get_if_exists(j, "scaleOutValueY", orig.scaleOutValueY);
+    esp1.scaleOutRandom = get_if_exists(j, "scaleOutRandom", orig.scaleOutRandom);
+    esp1.scaleAnmMaxFrameX = get_if_exists(j, "scaleAnmMaxFrameX", orig.scaleAnmMaxFrameX);
+    esp1.scaleAnmMaxFrameY = get_if_exists(j, "scaleAnmMaxFrameY", orig.scaleAnmMaxFrameY);
+    esp1.alphaInTiming = get_if_exists(j, "alphaInTiming", orig.alphaInTiming);
+    esp1.alphaOutTiming = get_if_exists(j, "alphaOutTiming", orig.alphaOutTiming);
+    esp1.alphaInValue = get_if_exists(j, "alphaInValue", orig.alphaInValue);
+    esp1.alphaBaseValue = get_if_exists(j, "alphaBaseValue", orig.alphaBaseValue);
+    esp1.alphaOutValue = get_if_exists(j, "alphaOutValue", orig.alphaOutValue);
+    esp1.alphaWaveRandom = get_if_exists(j, "alphaWaveRandom", orig.alphaWaveRandom);
+    esp1.alphaWaveFrequency = get_if_exists(j, "alphaWaveFrequency", orig.alphaWaveFrequency);
+    esp1.alphaWaveAmplitude = get_if_exists(j, "alphaWaveAmplitude", orig.alphaWaveAmplitude);
+    esp1.rotateAngle = get_if_exists(j, "rotateAngle", orig.rotateAngle);
+    esp1.rotateAngleRandom = get_if_exists(j, "rotateAngleRandom", orig.rotateAngleRandom);
+    esp1.rotateSpeed = get_if_exists(j, "rotateSpeed", orig.rotateSpeed);
+    esp1.rotateSpeedRandom = get_if_exists(j, "rotateSpeedRandom", orig.rotateSpeedRandom);
+    esp1.rotateDirection = get_if_exists(j, "rotateDirection", orig.rotateDirection);
     return esp1;
 }
 JPA_ETX1 read_ETX1_from_json(json& j, JPA_ETX1 &orig){
     JPA_ETX1 etx1;
-    etx1.indTextureMode = from_ind_texture_mode(
-        j.value("indTextureMode", to_ind_texture_mode(orig.indTextureMode)));
-    etx1.floats = j.value("floats", orig.floats);
-    etx1.indTextureID = j.value("indTextureID", orig.indTextureID);
-    etx1.unk = j.value("unk", orig.unk);
-    etx1.scale = j.value("scale", orig.scale);
-    etx1.secondTextureID = j.value("secondTextureID", orig.secondTextureID);
+    etx1.indTextureMode = from_ind_texture_mode(j, "indTextureMode", orig.indTextureMode);
+    etx1.floats = get_if_exists(j, "floats", orig.floats);
+    etx1.indTextureID = get_if_exists(j, "indTextureID", orig.indTextureID);
+    etx1.unk = get_if_exists(j, "unk", orig.unk);
+    etx1.scale = get_if_exists(j, "scale", orig.scale);
+    etx1.secondTextureID = get_if_exists(j, "secondTextureID", orig.secondTextureID);
     return etx1;
 }
 JPA_SSP1 read_SSP1_from_json(json& j, JPA_SSP1 &orig){
     JPA_SSP1 ssp1;
-    ssp1.unkFlags1 =  j.value("unkFlags1", orig.unkFlags1);
-    ssp1.isInheritedScale =  j.value("isInheritedScale", orig.isInheritedScale);
-    ssp1.isInheritedRGB =  j.value("isInheritedRGB", orig.isInheritedRGB);
-    ssp1.isInheritedAlpha =  j.value("isInheritedAlpha", orig.isInheritedAlpha);
-    ssp1.isEnableAlphaOut =  j.value("isEnableAlphaOut", orig.isEnableAlphaOut);
-    ssp1.isEnableField =  j.value("isEnableField", orig.isEnableField);
-    ssp1.isEnableRotate =  j.value("isEnableRotate", orig.isEnableRotate);
-    ssp1.isEnableScaleOut =  j.value("isEnableScaleOut", orig.isEnableScaleOut);
-    ssp1.shapeType =  from_shape_type(j.value("shapeType", to_shape_type(orig.shapeType)));
-    ssp1.dirType =  from_dir_type(j.value("dirType",   to_dir_type(orig.dirType)));
-    ssp1.rotType =  from_rot_type(j.value("rotType",   to_rot_type(orig.rotType)));
-    ssp1.planeType =  from_plane_type(j.value("planeType", to_plane_type(orig.planeType)));
-    ssp1.posRndm =  j.value("posRndm", orig.posRndm);
-    ssp1.baseVel =  j.value("baseVel", orig.baseVel);
-    ssp1.baseVelRndm =  j.value("baseVelRndm", orig.baseVelRndm);
-    ssp1.velInfRate =  j.value("velInfRate", orig.velInfRate);
-    ssp1.gravity =  j.value("gravity", orig.gravity);
-    ssp1.globalScale2D =  j.value("globalScale2D", orig.globalScale2D);
-    ssp1.inheritScale =  j.value("inheritScale", orig.inheritScale);
-    ssp1.inheritAlpha =  j.value("inheritAlpha", orig.inheritAlpha);
-    ssp1.inheritRGB =  j.value("inheritRGB", orig.inheritRGB);
-    std::string tempColor1 = to_color(orig.colorPrm);
-    tempColor1 = j.value("colorPrm", tempColor1);
-    std::string tempColor2 = to_color(orig.colorEnv);
-    tempColor2 = j.value("colorEnv", tempColor2);
-    ssp1.colorPrm =  from_color(tempColor1);
-    ssp1.colorEnv =  from_color(tempColor2);
-    ssp1.timing =  j.value("timing", orig.timing);
-    ssp1.life =  j.value("life", orig.life);
-    ssp1.rate =  j.value("rate", orig.rate);
-    ssp1.step =  j.value("step", orig.step);
-    ssp1.texIdx =  j.value("texIdx", orig.texIdx);
-    ssp1.rotateSpeed =  j.value("rotateSpeed", orig.rotateSpeed);
+    ssp1.unkFlags1 =  get_if_exists(j, "unkFlags1", orig.unkFlags1);
+    ssp1.isInheritedScale =  get_if_exists(j, "isInheritedScale", orig.isInheritedScale);
+    ssp1.isInheritedRGB =  get_if_exists(j, "isInheritedRGB", orig.isInheritedRGB);
+    ssp1.isInheritedAlpha =  get_if_exists(j, "isInheritedAlpha", orig.isInheritedAlpha);
+    ssp1.isEnableAlphaOut =  get_if_exists(j, "isEnableAlphaOut", orig.isEnableAlphaOut);
+    ssp1.isEnableField =  get_if_exists(j, "isEnableField", orig.isEnableField);
+    ssp1.isEnableRotate =  get_if_exists(j, "isEnableRotate", orig.isEnableRotate);
+    ssp1.isEnableScaleOut =  get_if_exists(j, "isEnableScaleOut", orig.isEnableScaleOut);
+    ssp1.shapeType =  from_shape_type(j, "shapeType", orig.shapeType);
+    ssp1.dirType =  from_dir_type(j, "dirType",   orig.dirType);
+    ssp1.rotType =  from_rot_type(j, "rotType",   orig.rotType);
+    ssp1.planeType =  from_plane_type(j, "planeType", orig.planeType);
+    ssp1.posRndm =  get_if_exists(j, "posRndm", orig.posRndm);
+    ssp1.baseVel =  get_if_exists(j, "baseVel", orig.baseVel);
+    ssp1.baseVelRndm =  get_if_exists(j, "baseVelRndm", orig.baseVelRndm);
+    ssp1.velInfRate =  get_if_exists(j, "velInfRate", orig.velInfRate);
+    ssp1.gravity =  get_if_exists(j, "gravity", orig.gravity);
+    ssp1.globalScale2D =  get_if_exists(j, "globalScale2D", orig.globalScale2D);
+    ssp1.inheritScale =  get_if_exists(j, "inheritScale", orig.inheritScale);
+    ssp1.inheritAlpha =  get_if_exists(j, "inheritAlpha", orig.inheritAlpha);
+    ssp1.inheritRGB =  get_if_exists(j, "inheritRGB", orig.inheritRGB);
+    ssp1.colorPrm =  get_color_from_json(j, "colorPrm", orig.colorPrm);
+    ssp1.colorEnv =  get_color_from_json(j, "colorEnv", orig.colorEnv);
+    ssp1.timing =  get_if_exists(j, "timing", orig.timing);
+    ssp1.life =  get_if_exists(j, "life", orig.life);
+    ssp1.rate =  get_if_exists(j, "rate", orig.rate);
+    ssp1.step =  get_if_exists(j, "step", orig.step);
+    ssp1.texIdx =  get_if_exists(j, "texIdx", orig.texIdx);
+    ssp1.rotateSpeed =  get_if_exists(j, "rotateSpeed", orig.rotateSpeed);
 
     return ssp1;
 }
 JPA_FLD1 read_FLD1_from_json(json& j, JPA_FLD1 &orig){
     JPA_FLD1 fld1;
-    fld1.sttFlag = j.value("sttFlag", orig.sttFlag);
-    fld1.type = from_field_type(j.value("type", to_field_type(orig.type)));
-    fld1.addType = from_field_add_type(j.value("addType", to_field_add_type(orig.addType)));
-    fld1.pos = j.value("pos", orig.pos);
-    fld1.dis = j.value("dis", orig.dis);
-    fld1.param1 = j.value("param1", orig.param1);
-    fld1.param2 = j.value("param2", orig.param2);
-    fld1.param3 = j.value("param3", orig.param3);
-    fld1.fadeIn = j.value("fadeIn", orig.fadeIn);
-    fld1.fadeOut = j.value("fadeOut", orig.fadeOut);
-    fld1.enTime = j.value("enTime", orig.enTime);
-    fld1.disTime = j.value("disTime", orig.disTime);
-    fld1.cycle = j.value("cycle", orig.cycle);
+    fld1.sttFlag = get_if_exists(j, "sttFlag", orig.sttFlag);
+    fld1.type = from_field_type(j, "type", orig.type);
+    fld1.addType = from_field_add_type(j, "addType", orig.addType);
+    fld1.pos = get_if_exists(j, "pos", orig.pos);
+    fld1.dis = get_if_exists(j, "dis", orig.dis);
+    fld1.param1 = get_if_exists(j, "param1", orig.param1);
+    fld1.param2 = get_if_exists(j, "param2", orig.param2);
+    fld1.param3 = get_if_exists(j, "param3", orig.param3);
+    fld1.fadeIn = get_if_exists(j, "fadeIn", orig.fadeIn);
+    fld1.fadeOut = get_if_exists(j, "fadeOut", orig.fadeOut);
+    fld1.enTime = get_if_exists(j, "enTime", orig.enTime);
+    fld1.disTime = get_if_exists(j, "disTime", orig.disTime);
+    fld1.cycle = get_if_exists(j, "cycle", orig.cycle);
     return fld1;
 }
 JPA_KFA1 read_KFA1_from_json(json& j, JPA_KFA1 &orig){
     JPA_KFA1 kfa1;
-    kfa1.keyType = from_key_type(j.value("keyType", to_key_type(orig.keyType)));
-    kfa1.keyCount = j.value("keyCount", orig.keyCount);
-    kfa1.unk0xA = j.value("unk0xA", orig.unk0xA);
-    kfa1.keyValues = j.value("keyValues", orig.keyValues);
-    kfa1.isLoopEnable = j.value("isLoopEnable", orig.isLoopEnable);
+    kfa1.keyType = from_key_type(j, "keyType", orig.keyType);
+    kfa1.keyCount = get_if_exists(j, "keyCount", orig.keyCount);
+    kfa1.unk0xA = get_if_exists(j, "unk0xA", orig.unk0xA);
+    kfa1.keyValues = get_if_exists(j, "keyValues", orig.keyValues);
+    kfa1.isLoopEnable = get_if_exists(j, "isLoopEnable", orig.isLoopEnable);
     return kfa1;
 }
 JPA_TDB1 read_TDB1_from_json(json& j, JPA_TDB1 &orig){
     JPA_TDB1 tdb1;
-    tdb1.textures = j.value("textures", orig.textures);
+    tdb1.textures = get_if_exists(j, "textures", orig.textures);
     return tdb1;
 }
 JPA_Texture read_Texture_from_json(json& j){
     JPA_Texture tex1;
-    tex1.name = j.value("name", "dummy");
+    tex1.name = get_if_exists(j, "name", (std::string)"dummy");
     return tex1;
 }
 JPA_Resource read_Resource_from_json(json& j, JPA_Resource &orig){
     JPA_Resource res;
-    res.resourceId = j.value("resourceId", orig.resourceId);
-    json bem = j["BEM1"];
-    json bsp = j["BSP1"];
-    json esp = j["ESP1"];
-    json etx = j["ETX1"];
-    json ssp = j["SSP1"];
-    json fld = j["FLD1"];
-    json kfa = j["KFA1"];
-    json tdb = j["TDB1"];
-    if (bem.size() != 0) {
-        res.bem1.push_back(read_BEM1_from_json(bem, orig.bem1.at(0)));
-    }
-    if (bsp.size() != 0) {
-        res.bsp1.push_back(read_BSP1_from_json(bsp, orig.bsp1.at(0)));
-    }
-    if (esp.size() != 0) {
+    res.resourceId = get_if_exists(j, "resourceId", orig.resourceId);
+    if (exists(j, "BEM1") && j["BEM1"].size() != 0) {
+        res.bem1.push_back(read_BEM1_from_json(j["BEM1"], orig.bem1.at(0)));
+    } else 
+        res.bem1 = orig.bem1;
+
+        
+    if (exists(j, "BSP1") && j["BSP1"].size() != 0) {
+        res.bsp1.push_back(read_BSP1_from_json(j["BSP1"], orig.bsp1.at(0)));
+    } else 
+        res.bsp1 = orig.bsp1;
+
+
+    if (exists(j, "ESP1") && j["ESP1"].size() != 0) {
         JPA_ESP1 temp;
         if (orig.esp1.size() != 0)
-            res.esp1.push_back(read_ESP1_from_json(esp, orig.esp1.at(0)));
+            res.esp1.push_back(read_ESP1_from_json(j["ESP1"], orig.esp1.at(0)));
         else
-            res.esp1.push_back(read_ESP1_from_json(esp, temp));
-    }
-    if (etx.size() != 0) {
+            res.esp1.push_back(read_ESP1_from_json(j["ESP1"], temp));
+    } else 
+        res.esp1 = orig.esp1;
+
+
+    if (exists(j, "ETX1") && j["ETX1"].size() != 0) {
         JPA_ETX1 temp;
         if (orig.etx1.size() != 0)
-            res.etx1.push_back(read_ETX1_from_json(esp, orig.etx1.at(0)));
+            res.etx1.push_back(read_ETX1_from_json(j["ETX1"], orig.etx1.at(0)));
         else
-            res.etx1.push_back(read_ETX1_from_json(esp, temp));
-    }
-    if (ssp.size() != 0) {
+            res.etx1.push_back(read_ETX1_from_json(j["ETX1"], temp));
+    } else 
+        res.etx1 = orig.etx1;
+
+
+    if (exists(j, "SSP1") && j["SSP1"].size() != 0) {
         JPA_SSP1 temp;
-        if (orig.esp1.size() != 0)
-            res.ssp1.push_back(read_SSP1_from_json(esp, orig.ssp1.at(0)));
+        if (orig.ssp1.size() != 0)
+            res.ssp1.push_back(read_SSP1_from_json(j["SSP1"], orig.ssp1.at(0)));
         else
-            res.ssp1.push_back(read_SSP1_from_json(esp, temp));
-    }
-    if (fld.size() != 0) {
+            res.ssp1.push_back(read_SSP1_from_json(j["SSP1"], temp));
+    } else 
+        res.ssp1 = orig.ssp1;
+
+
+    if (exists(j, "FLD1") && j["FLD1"].size() != 0) {
         JPA_FLD1 temp;
-        for (int i = 0; i < fld.size(); i++)
+        for (int i = 0; i < j["FLD1"].size(); i++)
         {
             if (i < orig.fld1.size())
-                res.fld1.push_back(read_FLD1_from_json(fld.at(i), orig.fld1.at(i)));
+                res.fld1.push_back(read_FLD1_from_json(j["FLD1"].at(i), orig.fld1.at(i)));
             else
-                res.fld1.push_back(read_FLD1_from_json(fld.at(i), temp));
+                res.fld1.push_back(read_FLD1_from_json(j["FLD1"].at(i), temp));
         }
-    }
-    if (kfa.size() != 0) {
+    } else 
+        res.fld1 = orig.fld1;
+
+
+    if (exists(j, "KFA1") && j["KFA1"].size() != 0) {
         JPA_KFA1 temp;
-        for (int i = 0; i < fld.size(); i++)
+        for (int i = 0; i < j["KFA1"].size(); i++)
         {
             if (i < orig.kfa1.size())
-                res.kfa1.push_back(read_KFA1_from_json(kfa.at(i), orig.kfa1.at(i)));
+                res.kfa1.push_back(read_KFA1_from_json(j["KFA1"].at(i), orig.kfa1.at(i)));
             else
-                res.kfa1.push_back(read_KFA1_from_json(kfa.at(i), temp));
+                res.kfa1.push_back(read_KFA1_from_json(j["KFA1"].at(i), temp));
         }
-    }
-    if (tdb.size() != 0) {
-        res.tdb1.push_back(read_TDB1_from_json(tdb, orig.tdb1.at(0)));
-    }
+    } else 
+        res.kfa1 = orig.kfa1;
+    
+
+    if (exists(j, "TDB1") && j["TDB1"].size() != 0) {
+        res.tdb1.push_back(read_TDB1_from_json(j["TDB1"], orig.tdb1.at(0)));
+    } else 
+        res.tdb1 = orig.tdb1;
     return res;
 }
 JPAC read_JPAC_from_json(json& j, JPAC &orig){
     JPAC jpc;
-    jpc.version = j.value("version", orig.version);
-    json j1 = j["resources"];
-    if (j1.size() != 0)
+    jpc.version = get_if_exists(j, "version", orig.version);
+    if (exists(j, "resources"))
     {
-        for(int i = 0; i < j1.size() && i < orig.resources.size(); i++)
-            jpc.resources.push_back(read_Resource_from_json(j1, orig.resources.at(i)));
-        JPA_Resource res;
-        if (j1.size() > orig.resources.size())
-            jpc.resources.push_back(read_Resource_from_json(j1, res));
+        json j1 = j["resources"];
+        for(int i = 0; i < j1.size(); i++){
+            if (i < orig.resources.size()){
+                jpc.resources.push_back(read_Resource_from_json(j1[i], orig.resources.at(i)));
+            } else {
+                JPA_Resource res;
+                jpc.resources.push_back(read_Resource_from_json(j1[i], res));
+            }
+        }
+        
     }
-    json j2 = j["textures"];
-    if (j2.size() != 0)
+    if (exists(j, "textures"))
     {
-        for(int i = 0; i < j2.size() && i < orig.textures.size(); i++)
-            jpc.textures.push_back(read_Texture_from_json(j1));
-        if (j2.size() > orig.textures.size())
-            jpc.textures.push_back(read_Texture_from_json(j1));
+        json j2 = j["textures"];
+        for(int i = 0; i < j2.size(); i++)
+        {
+            if (i < orig.textures.size())
+            {
+                jpc.textures.push_back(read_Texture_from_json(j2[i]));
+            } else {
+                jpc.textures.push_back(read_Texture_from_json(j2[i]));
+            }
+        }
     }
     for (auto & res : jpc.resources)
         res.update_resource_info(jpc.version, jpc.textures);

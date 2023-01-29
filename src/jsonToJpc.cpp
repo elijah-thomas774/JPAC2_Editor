@@ -39,20 +39,24 @@ Buffer toBuffer(JPA_BSP1& bsp1){
     u32 size = 0x34;
     size += bsp1.isEnableTexScrollAnm ? 0x28 : 0;
     u32 texAnmSize = bsp1.texIdxAnimData.size();
-    texAnmSize += (texAnmSize&3 != 0) ? (4 - texAnmSize&3) : 0;
+    texAnmSize += (texAnmSize%4 != 0) ? (4 - texAnmSize%4) : 0;
     size += texAnmSize;
     size += 6*bsp1.colorEnvAnimData.size();
-    size += (size&3 != 0) ? (4-size&3) : 0;
+    size += (size%4 != 0) ? (4-size%4) : 0;
     size += 6*bsp1.colorPrmAnimData.size();
-    size += (size&3 != 0) ? (4-size&3) : 0;
+    size += (size%4 != 0) ? (4-size%4) : 0;
     block.write(size);
     block.write(bsp1.flags);
     block.write((u32)0);
     block.write(bsp1.baseSize);
+    block.write(bsp1.blendModeFlags);
+    block.write(bsp1.alphaCompareFlags);
     block.write(bsp1.alphaRef0);
     block.write(bsp1.alphaRef1);
     block.write(bsp1.zModeFlags);
     block.write(bsp1.texFlags);
+    block.write((u8)bsp1.texIdxAnimData.size());
+    block.write(bsp1.texIdx);
     block.write(bsp1.colorFlags);
     block.write((u8)bsp1.colorPrmAnimData.size());
     block.write((u8)bsp1.colorEnvAnimData.size());
@@ -77,8 +81,8 @@ Buffer toBuffer(JPA_BSP1& bsp1){
     }
     if(bsp1.texIdxAnimData.size() != 0){
         block.write(bsp1.texIdxAnimData);
-        if (bsp1.texIdxAnimData.size()&3 != 0)
-            block.add_padding(4-bsp1.texIdxAnimData.size()&3);
+        if (bsp1.texIdxAnimData.size()%4 != 0)
+            block.add_padding(4-bsp1.texIdxAnimData.size()%4);
     }    
     if(bsp1.colorPrmAnimData.size() != 0){
         block.data.at(0xD) = block.data.size();
@@ -86,8 +90,8 @@ Buffer toBuffer(JPA_BSP1& bsp1){
             block.write(temp.first);
             block.write(temp.second.color_string);
         }
-        if (block.data.size()&3 != 0)
-            block.add_padding(4-block.data.size()&3);
+        if (block.data.size()%4 != 0)
+            block.add_padding(4-block.data.size()%4);
     }
     if(bsp1.colorEnvAnimData.size() != 0){
         block.data.at(0xF) = block.data.size();
@@ -95,8 +99,8 @@ Buffer toBuffer(JPA_BSP1& bsp1){
             block.write(temp.first);
             block.write(temp.second.color_string);
         }
-        if (block.data.size()&3 != 0)
-            block.add_padding(4-block.data.size()&3);
+        if (block.data.size()%4 != 0)
+            block.add_padding(4-block.data.size()%4);
     }
     return block;
 }
@@ -138,13 +142,13 @@ Buffer toBuffer(JPA_ETX1& etx1){
     if (etx1.floats.size() == 16) block.write((u32)0x50); // 2-11
     if (etx1.floats.size() == 6) block.write((u32)0x28); // 2-10
     block.write((u16)0);
-    block.write(etx1.secondTextureID == 0xFF ? 0 : 1);
-    block.write(etx1.indTextureMode&0x1);
+    block.write((u8)(etx1.secondTextureID == 0xFF ? 0 : 1));
+    block.write((u8)(etx1.indTextureMode&0x1));
     block.write(etx1.floats); // TODO: Add verification for this
     if (etx1.floats.size() == 16) block.write(etx1.unk);
     block.write(etx1.scale);
     block.write(etx1.indTextureID);
-    block.write(etx1.secondTextureID == 0xFF ? 0 : etx1.secondTextureID);
+    block.write((u8)(etx1.secondTextureID == 0xFF ? 0 : etx1.secondTextureID));
     if (etx1.floats.size() == 6) block.write((u8)0);
     return block;
 }
@@ -215,8 +219,8 @@ Buffer toBuffer(JPA_TDB1& tdb1){
     len+=0x8;
     block.write(len);
     block.write(tdb1.textureIdx);
-    if (block.data.size()&3 != 0)
-        block.add_padding(4-block.data.size()&3);
+    if (block.data.size()%4 != 0)
+        block.add_padding(4-block.data.size()%4);
     return block;
 }
 Buffer toBuffer(JPA_Texture& texture){
@@ -282,17 +286,21 @@ Buffer toBuffer(JPAC& jpc){
     block.write(jpc.resource_count);
     block.write(jpc.texture_count);
     block.write((u32)0); // This will be updated after things are added
-    for (auto&res : jpc.resources)
-        block.append(toBuffer(res));
-    if (block.data.size()&0xF != 0)
-        block.add_padding(16-block.data.size()&0xF);
+    for (auto&res : jpc.resources){
+        Buffer tempBuff = toBuffer(res);
+        block.append(tempBuff);
+    }
+    if (block.data.size()%16 != 0)
+        block.add_padding(16-block.data.size()%16);
     u32 size = block.data.size();
     block.data.at(0xC) = (u8)((size >> 24) & 0xFF);
     block.data.at(0xD) = (u8)((size >> 16) & 0xFF);
     block.data.at(0xE) = (u8)((size >>  8) & 0xFF);
     block.data.at(0xF) = (u8)((size >>  0) & 0xFF);
-    for (auto& tex: jpc.textures)
-        block.append(toBuffer(tex));
+    for (auto& tex: jpc.textures){
+        Buffer tempBuff = toBuffer(tex);
+        block.append(tempBuff);
+    }
     return block;
 }
 
@@ -301,42 +309,45 @@ void write_buffer(std::string& out_file, Buffer& jpc){
     if(output.is_open())
     {
         output.write((char*)&jpc.data.at(0), jpc.data.size());
+        output.close();
     }
     else{
         std::cout << "Could not open Jpc destination file" << std::endl;
     }
-    output.close();
 }
 
-JPAC edit_from_file(JPAC &jpc, std::string edit_file){
+void edit_from_file(JPAC &jpc, std::string edit_file){
     json j;
     JPAC edited_jpc;
     std::ifstream in_file(edit_file);
     if (in_file.is_open()){
-        in_file >> j;
-        jpc = read_JPAC_from_json(j, jpc);
-        in_file.close();
+        try{
+            j = json::parse(in_file);
+            edited_jpc = read_JPAC_from_json(j, edited_jpc);
+            in_file.close();
+            jpc.apply_edits(edited_jpc);
+        }
+        catch (json::parse_error& e){
+            std::cout << "File is invalid Json" << std::endl;
+        }
     }
     else {
         std::cout << "Could not find specified source file for edits" << std::endl;
     }
-    jpc = read_JPAC_from_json(j, jpc);
-    return jpc;
 }
-JPAC load_from_file(std::string source_jpc, std::string texture_folder){
+JPAC load_from_file(std::string source_jpc, std::string texture_folder, JPAC &src){
     if (texture_folder == "") assert(!"Specify a Texture Folder");
     json j;
     JPAC toReturn;
     std::ifstream in_file(source_jpc);
     if (in_file.is_open()){
         in_file >> j;
-        JPAC unused;
-        toReturn = read_JPAC_from_json(j, unused);
+        toReturn = read_JPAC_from_json(j, src);
         toReturn.append_textures(texture_folder);
         in_file.close();
     }
     else {
-        std::cout << "Could not find source file" << std::endl;
+        std::cout << "Could not find Texture Folder" << std::endl;
     }
     return toReturn;
 }

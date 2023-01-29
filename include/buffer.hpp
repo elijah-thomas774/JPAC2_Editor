@@ -53,7 +53,7 @@ class Buffer {
         
         void add_padding(i32 n);
 
-        void append(const Buffer &newBuff);
+        void append(Buffer &newBuff);
         void append(std::vector<u8> &dat);
         std::vector<u8> data;
 };
