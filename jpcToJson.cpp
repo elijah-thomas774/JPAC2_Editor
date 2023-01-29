@@ -7,7 +7,7 @@ JPA_BEM1 read_BEM1_JPAC2_10(Buffer& block)
     string magic = block.read_string(0, 4); 
     u32 size = block.read_u32(4);
     assert(magic.compare("BEM1")==0);
-    assert(size == block.data.size() == 0x7C);
+    assert(block.data.size() == 0x7C);
 
     JPA_BEM1 bem1;
     bem1.emitFlags        = block.read_u32(0x08);
@@ -114,7 +114,7 @@ JPA_BSP1 read_BSP1_JPAC2_10(Buffer& block){
             Color color;
             frameTime = block.read_u16(colorEnvDataOffs + 6*i);
             color.color_string = block.read_u32(colorEnvDataOffs + 6*i + 2);
-            bsp1.colorPrmAnimData.push_back({frameTime, color});
+            bsp1.colorEnvAnimData.push_back({frameTime, color});
         }
     }
     return bsp1;
@@ -151,7 +151,7 @@ JPA_ETX1 read_ETX1_JPAC2_10(Buffer& block){
     string magic = block.read_string(0, 4); 
     u32 size = block.read_u32(4);
     assert(magic.compare("ETX1") == 0);
-    assert(size == 0x28 == block.data.size());
+    assert(0x28 == block.data.size());
     JPA_ETX1 etx1;
     u32 flags            = block.read_u32(0x8);        
     etx1.indTextureMode  = (flags & 0x1);
@@ -166,7 +166,7 @@ JPA_SSP1 read_SSP1_JPAC2_10(Buffer& block){
     string magic = block.read_string(0, 4); 
     u32 size = block.read_u32(4);
     assert(magic.compare("SSP1") == 0);
-    assert(size == 0x48 == block.data.size());
+    assert(0x48 == block.data.size());
     JPA_SSP1 ssp1;
     ssp1.flags          = block.read_u32(0x08);
     ssp1.posRndm        = block.read_f32(0xC);
@@ -192,7 +192,7 @@ JPA_FLD1 read_FLD1_JPAC2_10(Buffer& block){
     string magic = block.read_string(0, 4); 
     u32 size = block.read_u32(4);
     assert(magic.compare("FLD1") == 0);
-    assert(size == 0x44 == block.data.size());
+    assert(0x44 == block.data.size());
 
     JPA_FLD1 fld1;
     fld1.flags   = block.read_u32(0x8);
@@ -311,7 +311,7 @@ JPA_BSP1 read_BSP1_JPAC2_11(Buffer& block){
             Color color;
             frameTime = block.read_u16(colorEnvDataOffs + 6*i);
             color.color_string = block.read_u32(colorEnvDataOffs + 6*i + 2);
-            bsp1.colorPrmAnimData.push_back({frameTime, color});
+            bsp1.colorEnvAnimData.push_back({frameTime, color});
         }
     }
     return bsp1;
@@ -323,7 +323,7 @@ JPA_ETX1 read_ETX1_JPAC2_11(Buffer& block){
     string magic = block.read_string(0, 4); 
     u32 size = block.read_u32(4);
     assert(magic.compare("ETX1") == 0);
-    assert(size == 0x50 == block.data.size());
+    assert(0x50 == block.data.size());
 
     JPA_ETX1 etx1;
     u32 flags            = block.read_u32(0x8);        
@@ -348,7 +348,7 @@ JPA_TDB1 read_TDB1_JPAC2_11(Buffer& block, u32 num){
     return read_TDB1_JPAC2_10(block, num);
 }
 
-JPA_Resource read_resouce_JPAC2_10(Buffer& rawRes){
+JPA_Resource read_resouce_JPAC2_11(Buffer& rawRes){
     JPA_Resource resource;
     resource.resourceId = rawRes.read_u16(0x0);
     resource.blockCount = rawRes.read_u16(0x2);
@@ -383,14 +383,15 @@ JPA_Resource read_resouce_JPAC2_10(Buffer& rawRes){
     }
     return resource;
 }
-JPA_Resource read_resouce_JPAC2_11(Buffer& rawRes){
+JPA_Resource read_resouce_JPAC2_10(Buffer& rawRes){
     JPA_Resource resource;
     resource.resourceId = rawRes.read_u16(0x0);
-    resource.blockCount = rawRes.read_u8(0x4);
-    resource.fieldBlockCount = rawRes.read_u8(0x5);
+    resource.blockCount = rawRes.read_u16(0x2);
+    resource.fieldBlockCount = rawRes.read_u8(0x4);
+    resource.keyBlockCount = rawRes.read_u8(0x5);
     resource.tdb1Count = rawRes.read_u8(0x6);
     u32 currOffset = 0x8;
-    for (int i = 0; i < resource.blockCount; i++)
+    for (i32 k = 0; k < resource.blockCount; k+=1)
     {
         string magic = rawRes.read_string(currOffset, 4);
         u32 blockSize = rawRes.read_u32(currOffset+0x04);
@@ -440,6 +441,7 @@ JPAC read_JPAC(Buffer& rawJpc){
     {
         u32 resStart = currOffset;
         u16 blockCnt = rawJpc.read_u16(resStart+0x2);
+        currOffset += 8;
         for(i32 j = 0; j < blockCnt; j++)
             currOffset+=rawJpc.read_u32(currOffset+0x4);
         Buffer resource = rawJpc.read_slice(resStart, currOffset);
@@ -472,7 +474,7 @@ void write_json(std::string &out_file, JPAC &jpc){
     ordered_json j = to_json(jpc);
     std::ofstream dest;
     dest.open(out_file, std::ios::binary | std::ios::out);
-    dest << j;
+    dest << std::setw(4) << j;
     dest.close();
 }
 void dump_textures(std::string &texture_folder, std::vector<JPA_Texture> &textures){
