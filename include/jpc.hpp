@@ -278,7 +278,6 @@ class JPAC {
     void add_texture(std::string &texture_name);
     void append_textures(std::string &path);
     void add_texture_data(std::string &path);
-    void replace_texture(std::string &texture_name);
     i32 get_resource_index(u16 id);
     void add_resource(JPA_Resource &resource);
     void update();

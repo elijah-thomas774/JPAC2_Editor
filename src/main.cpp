@@ -28,5 +28,7 @@ void print_buffer(Buffer &buffer)
 
 int main()
 {
-    read_jpc("Common.jpc", "jpc.json", "dump\\");
+    // read_jpc("Common.jpc", "jpc.json", "dump\\");
+    JPAC jpc = load_from_file("jpc.json", "dump\\");
+    write_to_file(jpc, "test.jpc");
 }

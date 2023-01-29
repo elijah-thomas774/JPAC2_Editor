@@ -1,6 +1,8 @@
 #include "jpc.hpp"
 #include <assert.h>
 #include <iostream>
+#include <fstream>
+#include <filesystem>
 void JPA_BEM1::parse_flags(){
     volumeType = (emitFlags >> 8) & 0x7;
     unkEmitFlags = (emitFlags & 0x1F);
@@ -258,23 +260,46 @@ void JPA_Resource::update_resource_info(std::string version, std::vector<JPA_Tex
             bsp1.at(0).build_flags_JPAC2_11();   
     }
 }
-void JPAC::add_texture(std::string &texture_name){
-    // texture name is the file path
-    // appends it to the list
-    // then updates
-}
+
 void JPAC::append_textures(std::string &path){
-    // add textures from folder
-    // check matching names - replace
-    // else add it
+    for (auto &entry : std::filesystem::directory_iterator(path))
+    {
+        auto& path = entry.path();
+        if (path.extension().compare(".bti") == 0){
+            JPA_Texture tex;
+            tex.name = path.stem().string();
+            std::ifstream bti_file(entry.path().string(), std::ios::binary | std::ios::in);
+            i32 size = bti_file.tellg();
+            tex.data = std::vector<u8>(size);
+            bti_file.seekg(0, std::ios::beg);
+            bti_file.read((char *)&tex.data[0], size);
+            bti_file.close();
+        }
+    }
     update();
 }
 void JPAC::add_texture_data(std::string &path){
-    
+    for (JPA_Texture &tex : textures)
+    {
+        std::string texture_name = path;
+        texture_name.append(tex.name);
+        texture_name.append(".bti");
+        std::ifstream bti_file;
+        bti_file.open(texture_name, std::ios::in | std::ios::binary);
+        if (bti_file.is_open())
+        {
+            i32 size = bti_file.tellg();
+            tex.data = std::vector<u8>(size);
+            bti_file.seekg(0, std::ios::beg);
+            bti_file.read((char *)&tex.data[0], size);
+            bti_file.close();
+        }   
+        else{
+            std::cout << "Could not find file with name: " << tex.name << std::endl;
+        }
+    }    
 }
-void JPAC::replace_texture(std::string &texture_name){
-    // folder
-}
+
 i32  JPAC::get_resource_index(u16 id){
     for (i32 i = 0; i < resources.size(); i++)
     {

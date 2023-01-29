@@ -20,9 +20,9 @@ Buffer toBuffer(JPAC&); // done
 
 void write_buffer(std::string&, Buffer&); // done
 
-void edit_from_file(); // This will handle version differences by calling the respectice build func
-void load_from_file();
-void write_to_file();
+JPAC edit_from_file(JPAC &jpc, std::string edits);
+JPAC load_from_file(std::string source_jpc, std::string texture_folder);
+void write_to_file(JPAC &jpc, std::string dest_file);
 
 
 #endif
