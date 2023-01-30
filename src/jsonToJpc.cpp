@@ -335,21 +335,10 @@ void edit_from_file(JPAC &jpc, std::string edit_file){
         std::cout << "Could not find specified source file for edits" << std::endl;
     }
 }
-JPAC load_from_file(std::string source_jpc, std::string texture_folder, JPAC &src){
+JPAC load_from_file(std::string texture_folder, JPAC &src){
     if (texture_folder == "") assert(!"Specify a Texture Folder");
-    json j;
-    JPAC toReturn;
-    std::ifstream in_file(source_jpc);
-    if (in_file.is_open()){
-        in_file >> j;
-        toReturn = read_JPAC_from_json(j, src);
-        toReturn.append_textures(texture_folder);
-        in_file.close();
-    }
-    else {
-        std::cout << "Could not find Texture Folder" << std::endl;
-    }
-    return toReturn;
+    src.append_textures(texture_folder);
+    return src;
 }
 void write_to_file(JPAC &jpc, std::string dest_file){
     Buffer jpcBuffer = toBuffer(jpc);

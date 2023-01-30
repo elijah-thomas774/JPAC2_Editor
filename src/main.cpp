@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     bool texure_folder_specified = false;
     bool change_file_specified = false;
 
-    if (does_cmd_exist(argv, argv+argc, "-h"))
+    if (argc == 1 || does_cmd_exist(argv, argv+argc, "-h"))
     {
         cout << "To use this program a few files need to be specifed. Their arguments are below." << endl;
         cout << "-h\tThis menu" << endl;
@@ -67,32 +67,106 @@ int main(int argc, char** argv)
         // check core input commands
         if (src_file_specified &&  dest_folder_specified && change_file_specified)
         {
-
+            string src_file = get_cmd_option(argv, argv+argc, "");
+            string dest_file = get_cmd_option(argv, argv+argc, "");
+            string edit_file = get_cmd_option(argv, argv+argc, "");
+            string tex_folder = get_cmd_option(argv, argv+argc, "");
+            if (src_file == ""){
+                cout << "Source file is invalid" << endl;
+                return 0;
+            }
+            if (dest_file == ""){
+                cout << "Destination file is invalid" << endl;
+                return 0;
+            }
+            if (edit_file == ""){
+                cout << "Edit file is invalid" << endl;
+                return 0;
+            }
+            if (tex_folder == "" && texure_folder_specified){
+                cout << "Texture Folder is invalid" << endl;
+                return 0;
+            }
+            filesystem::path src_path(src_file);
+            filesystem::path dest_path(dest_file);
+            filesystem::path edit_path(edit_file);
+            filesystem::path tex_path;
+            if (texure_folder_specified) tex_path = filesystem::path(tex_folder);
+            if (!filesystem::exists(src_path) || !filesystem::is_regular_file(src_path) || src_path.extension().string().compare(".jpc") != 0){
+                cout << "Soruce file is invalid" << endl;
+                return 0;
+            }
+            if (texure_folder_specified && (!filesystem::exists(tex_path) || !filesystem::is_directory(tex_path))){
+                cout << "Texture folder is invalid" << endl;
+                return 0;
+            }
+            if (!filesystem::exists(edit_path) || !filesystem::is_regular_file(edit_path) || edit_path.extension().string().compare(".json") != 0){
+                cout << "Edit file is invalid" << endl;
+                return 0;
+            }
+            JPAC orig = read_jpc(src_file);
+            if (texure_folder_specified)
+                load_from_file(tex_folder, orig);
+            edit_from_file(orig, edit_file);
+            write_to_file(orig, dest_file);
+            return 0;
         } else if (dump_textures && src_file_specified) {
             cout << "-d will only dump textures and all jpc info" << endl;
             string dump_folder = get_cmd_option(argv, argv + argc, "-d");
             if (dump_folder == "")
                 return 0;
-            string src_file_specified = get_cmd_option(argv, argv+argc, "-i");
-            if (src_file_specified == "")
+            string src_file = get_cmd_option(argv, argv+argc, "-i");
+            if (src_file == "")
                 return 0;
             
             // TOD0: check if files are valid
-
-
+            filesystem::path dump_folder_path(dump_folder);
+            filesystem::path src_file_specified_path(src_file);
+            if (!filesystem::exists(src_file_specified_path))
+            {
+                cout << "Input File does could not be read. Make sure you specified the correct path." << endl;
+                return 0;
+            }
+            if (!filesystem::exists(dump_folder_path)){
+                cout << "Folder specified for texture dump does not exist. Make sure its entered properly and folder is already created." << endl;
+                return 0;
+            }
+            if (!filesystem::is_directory(dump_folder_path)){
+                cout << "The Filedump location requires to be a folder" << endl;
+                return 0;
+            }
+            if (!filesystem::is_regular_file(src_file_specified_path)){
+                cout << "The soruce File specified is not a file" << endl;
+                return 0;
+            }
+            if (!src_file_specified_path.extension().string().compare(".jpc") != 0){
+                cout << "The source file is expected to be a .jpc" << endl;
+                return 0;
+            }
+            cout << "Starting dump process" << endl;
+            if (dest_folder_specified)
+            {
+                string out_file = get_cmd_option(argv, argv+argc, "-o");
+                if (out_file == ""){
+                    cout << "You need to specify an output file for -o" << endl;
+                    return 0;
+                }
+                read_jpc(src_file, out_file, dump_folder);
+                cout << "Finished" << endl;
+                return 0;
+            }
+            string out_file = src_file_specified_path.stem().string();
+            out_file.append(".json");
+            cout << "Outputting to this directory with name: " << out_file << endl;
+            read_jpc(src_file, out_file, dump_folder);
+            cout << "Finished" << endl;
+            return 0;
         } else if (dump_textures) {
             cout << "use -i to specify a source file to dump" << endl;
         } else {
             cout << "Not all needed commands are specified " << endl;
             cout << "Need: -i, -o, -c to operate " << endl;
         }
-    
     }
-
-    JPAC orig = read_jpc("C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\Common.jpc");
-    // read_jpc("Common.jpc", "jpc.json", "dump\\");
-    // JPAC jpc = load_from_file("C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\jpc.json", "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\dump\\", orig);
-    edit_from_file(orig, "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\testChanges.json");
-    write_to_file(orig, "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\output\\Common.jpc");
     return 0;
 }
