@@ -28,7 +28,9 @@ void print_buffer(Buffer &buffer)
 
 int main()
 {
+    JPAC orig = read_jpc("C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\Common.jpc");
     // read_jpc("Common.jpc", "jpc.json", "dump\\");
-    JPAC jpc = load_from_file("jpc.json", "dump\\");
-    write_to_file(jpc, "test.jpc");
+    // JPAC jpc = load_from_file("C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\jpc.json", "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\dump\\", orig);
+    edit_from_file(orig, "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\testChanges.json");
+    write_to_file(orig, "C:\\Users\\elija\\Documents\\GitHub\\JPAC2_Editor\\output\\Common.jpc");
 }

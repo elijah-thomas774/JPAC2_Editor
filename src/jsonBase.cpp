@@ -306,6 +306,7 @@ std::string to_color(Color color){
 Color from_color(std::string& str){
     Color color;
     std::string colorHex = str.substr(1, str.length());
+    if(colorHex.length() < 8) colorHex.append("FF");
     color.color_string = std::stoul(colorHex, nullptr, 16);
     return color; 
 }
@@ -794,7 +795,7 @@ JPA_Resource read_Resource_from_json(json& j, JPA_Resource &orig){
     } else 
         res.bem1 = orig.bem1;
 
-        
+
     if (exists(j, "BSP1") && j["BSP1"].size() != 0) {
         res.bsp1.push_back(read_BSP1_from_json(j["BSP1"], orig.bsp1.at(0)));
     } else 
@@ -869,10 +870,17 @@ JPAC read_JPAC_from_json(json& j, JPAC &orig){
     if (exists(j, "resources"))
     {
         json j1 = j["resources"];
-        for(int i = 0; i < j1.size(); i++){
-            if (i < orig.resources.size()){
-                jpc.resources.push_back(read_Resource_from_json(j1[i], orig.resources.at(i)));
-            } else {
+        for(i32 i = 0; i < j1.size(); i++){
+            assert(exists(j1[i], "resourceId"));
+            u16 resId = j1[i]["resourceId"].get<u16>();
+            i32 idx = orig.get_resource_index(resId);
+            if (i < orig.resources.size() && idx == i){
+                jpc.resources.push_back(read_Resource_from_json(j1[i], orig.resources.at(idx)));
+            } else if (idx != -1)
+            {
+                jpc.resources.push_back(read_Resource_from_json(j1[i], orig.resources.at(idx)));
+            } 
+            else {
                 JPA_Resource res;
                 jpc.resources.push_back(read_Resource_from_json(j1[i], res));
             }
@@ -891,6 +899,9 @@ JPAC read_JPAC_from_json(json& j, JPAC &orig){
                 jpc.textures.push_back(read_Texture_from_json(j2[i]));
             }
         }
+    }
+    else{
+        jpc.textures = orig.textures;
     }
     for (auto & res : jpc.resources)
         res.update_resource_info(jpc.version, jpc.textures);

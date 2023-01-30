@@ -290,8 +290,8 @@ Buffer toBuffer(JPAC& jpc){
         Buffer tempBuff = toBuffer(res);
         block.append(tempBuff);
     }
-    if (block.data.size()%16 != 0)
-        block.add_padding(16-block.data.size()%16);
+    if (block.data.size()%32 != 0)
+        block.add_padding(32-block.data.size()%32);
     u32 size = block.data.size();
     block.data.at(0xC) = (u8)((size >> 24) & 0xFF);
     block.data.at(0xD) = (u8)((size >> 16) & 0xFF);
@@ -323,7 +323,7 @@ void edit_from_file(JPAC &jpc, std::string edit_file){
     if (in_file.is_open()){
         try{
             j = json::parse(in_file);
-            edited_jpc = read_JPAC_from_json(j, edited_jpc);
+            edited_jpc = read_JPAC_from_json(j, jpc);
             in_file.close();
             jpc.apply_edits(edited_jpc);
         }
