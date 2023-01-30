@@ -413,7 +413,7 @@ ordered_json to_json(JPA_BSP1& bsp1){
     j["zModeFlags"]             = bsp1.zModeFlags;
     j["anmRndm"]                = bsp1.anmRndm;
     j["isGlblTexAnm"]           = bsp1.isGlblTexAnm;
-    j["texCalcIdxType"]         = bsp1.texCalcIdxType;
+    j["texCalcIdxType"]         = to_calc_idx_type(bsp1.texCalcIdxType);
     j["texIdx"]                 = bsp1.texIdx;
     j["texIdxAnimData"]         = bsp1.texIdxAnimData;
     j["texIdxLoopOfstMask"]     = bsp1.texIdxLoopOfstMask;
@@ -538,7 +538,6 @@ ordered_json to_json(JPA_FLD1& fld1){
 ordered_json to_json(JPA_KFA1& kfa1){
     ordered_json j;
     j["keyType"] = to_key_type(kfa1.keyType);
-    j["keyCount"] = kfa1.keyCount;
     j["unk0xA"] = kfa1.unk0xA;
     j["keyValues"] = kfa1.keyValues;
     j["isLoopEnable"] = kfa1.isLoopEnable;
@@ -645,7 +644,7 @@ JPA_BSP1 read_BSP1_from_json(json& j, JPA_BSP1 &orig){
     bsp1.zModeFlags = get_if_exists(j, "zModeFlags", orig.zModeFlags);              
     bsp1.anmRndm = get_if_exists(j, "anmRndm", orig.anmRndm);                 
     bsp1.isGlblTexAnm = get_if_exists(j, "isGlblTexAnm", orig.isGlblTexAnm);            
-    bsp1.texCalcIdxType = get_if_exists(j, "texCalcIdxType", orig.texCalcIdxType);          
+    bsp1.texCalcIdxType = from_calc_idx_type(j, "texCalcIdxType", orig.texCalcIdxType);          
     bsp1.texIdx = get_if_exists(j, "texIdx", orig.texIdx);                  
     bsp1.texIdxAnimData = get_if_exists(j, "texIdxAnimData", orig.texIdxAnimData);          
     bsp1.texIdxLoopOfstMask = get_if_exists(j, "texIdxLoopOfstMask", orig.texIdxLoopOfstMask);      
@@ -771,7 +770,6 @@ JPA_FLD1 read_FLD1_from_json(json& j, JPA_FLD1 &orig){
 JPA_KFA1 read_KFA1_from_json(json& j, JPA_KFA1 &orig){
     JPA_KFA1 kfa1;
     kfa1.keyType = from_key_type(j, "keyType", orig.keyType);
-    kfa1.keyCount = get_if_exists(j, "keyCount", orig.keyCount);
     kfa1.unk0xA = get_if_exists(j, "unk0xA", orig.unk0xA);
     kfa1.keyValues = get_if_exists(j, "keyValues", orig.keyValues);
     kfa1.isLoopEnable = get_if_exists(j, "isLoopEnable", orig.isLoopEnable);

@@ -35,3 +35,4 @@
 dump/*
 *.json
 *.jpc
+Release*
