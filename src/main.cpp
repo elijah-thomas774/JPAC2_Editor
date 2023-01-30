@@ -112,7 +112,7 @@ int main(int argc, char** argv)
             return 0;
         } else if (dump_textures && src_file_specified) {
             cout << "-d will only dump textures and all jpc info" << endl;
-            string dump_folder = get_cmd_option(argv, argv + argc, "-d");
+            string dump_folder = get_cmd_option(argv, argv + argc, "-t");
             if (dump_folder == "")
                 return 0;
             string src_file = get_cmd_option(argv, argv+argc, "-i");
