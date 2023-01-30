@@ -67,10 +67,10 @@ int main(int argc, char** argv)
         // check core input commands
         if (src_file_specified &&  dest_folder_specified && change_file_specified)
         {
-            string src_file = get_cmd_option(argv, argv+argc, "");
-            string dest_file = get_cmd_option(argv, argv+argc, "");
-            string edit_file = get_cmd_option(argv, argv+argc, "");
-            string tex_folder = get_cmd_option(argv, argv+argc, "");
+            string src_file = get_cmd_option(argv, argv+argc, "-i");
+            string dest_file = get_cmd_option(argv, argv+argc, "-o");
+            string edit_file = get_cmd_option(argv, argv+argc, "-c");
+            string tex_folder = get_cmd_option(argv, argv+argc, "-t");
             if (src_file == ""){
                 cout << "Source file is invalid" << endl;
                 return 0;
@@ -104,17 +104,25 @@ int main(int argc, char** argv)
                 cout << "Edit file is invalid" << endl;
                 return 0;
             }
+            cout << "Reading source file." << endl;
             JPAC orig = read_jpc(src_file);
+            if (orig.version.compare("BAD") == 0){
+                return 0;
+            }
             if (texure_folder_specified)
                 load_from_file(tex_folder, orig);
+            cout << "Editing Resources" << endl;
             edit_from_file(orig, edit_file);
             write_to_file(orig, dest_file);
+            cout << "Done" << endl;
             return 0;
         } else if (dump_textures && src_file_specified) {
             cout << "-d will only dump textures and all jpc info" << endl;
             string dump_folder = get_cmd_option(argv, argv + argc, "-t");
-            if (dump_folder == "")
+            if (dump_folder == ""){
+                cout << "Specify a folder to dump textures" << endl;
                 return 0;
+            }
             string src_file = get_cmd_option(argv, argv+argc, "-i");
             if (src_file == "")
                 return 0;
@@ -122,6 +130,7 @@ int main(int argc, char** argv)
             // TOD0: check if files are valid
             filesystem::path dump_folder_path(dump_folder);
             filesystem::path src_file_specified_path(src_file);
+            src_file_specified_path.assign(src_file);
             if (!filesystem::exists(src_file_specified_path))
             {
                 cout << "Input File does could not be read. Make sure you specified the correct path." << endl;
@@ -139,8 +148,8 @@ int main(int argc, char** argv)
                 cout << "The soruce File specified is not a file" << endl;
                 return 0;
             }
-            if (!src_file_specified_path.extension().string().compare(".jpc") != 0){
-                cout << "The source file is expected to be a .jpc" << endl;
+            if (src_file_specified_path.extension().string().compare(".jpc") != 0){
+                cout << "The source file is expected to be a .jpc but got "<< src_file_specified_path.extension().string() << endl;
                 return 0;
             }
             cout << "Starting dump process" << endl;
@@ -155,8 +164,9 @@ int main(int argc, char** argv)
                 cout << "Finished" << endl;
                 return 0;
             }
-            string out_file = src_file_specified_path.stem().string();
-            out_file.append(".json");
+            string out_file = "full_";
+            out_file.append(src_file_specified_path.stem().string());
+            out_file.append("_info.json");
             cout << "Outputting to this directory with name: " << out_file << endl;
             read_jpc(src_file, out_file, dump_folder);
             cout << "Finished" << endl;

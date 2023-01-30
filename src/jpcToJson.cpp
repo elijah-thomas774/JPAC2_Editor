@@ -466,6 +466,7 @@ JPAC read_JPAC(Buffer& rawJpc){
 
 void read_jpc(std::string in_file, std::string out_file, std::string texture_dump_folder){
     Buffer data(in_file); // reads in the file
+    
     JPAC jpc = read_JPAC(data);
     write_json(out_file, jpc);
     if (texture_dump_folder != "")
@@ -474,7 +475,14 @@ void read_jpc(std::string in_file, std::string out_file, std::string texture_dum
 JPAC read_jpc(std::string in_file)
 {
     Buffer data(in_file); // reads in the file
-    JPAC jpc = read_JPAC(data);
+    string version = data.read_string(0, 8);
+    JPAC jpc;
+    if (version.compare("JPAC2-10") != 0 && version.compare("JPAC2-11") != 0){
+        std::cout << "Version is not compatible. Expects JPAC2-10 or JPAC2-11, but got " << version << std::endl;
+        jpc.version = "BAD";
+        return jpc;
+    }
+    jpc = read_JPAC(data);
     return jpc;
 }
 void write_json(std::string &out_file, JPAC &jpc){

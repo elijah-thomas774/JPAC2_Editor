@@ -322,7 +322,7 @@ void edit_from_file(JPAC &jpc, std::string edit_file){
     std::ifstream in_file(edit_file);
     if (in_file.is_open()){
         try{
-            j = json::parse(in_file);
+            j = json::parse(in_file, nullptr, true, true);
             edited_jpc = read_JPAC_from_json(j, jpc);
             in_file.close();
             jpc.apply_edits(edited_jpc);
