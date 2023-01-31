@@ -1,5 +1,5 @@
-test: buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o
-	g++ buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o -o test -Iinclude\\ -Wno-multichar
+JPAC2_Editor: buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o
+	g++ buffer.o jsonBase.o jsonToJpc.o jpcToJson.o jpc.o main.o -o JPAC2_Editor -Iinclude\\ -Wno-multichar -static -static-libgcc -static-libstdc++
 
 main.o: src\\main.cpp
 	g++ -c src\\main.cpp -Iinclude\\ -Wno-multichar
