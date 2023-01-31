@@ -1,4 +1,4 @@
-#include "buffer.hpp"
+#include "../include/buffer.hpp"
 
 
 Buffer::Buffer(std::string& path) : data()

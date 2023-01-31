@@ -1,7 +1,7 @@
-#include "buffer.hpp"
-#include "common_types.hpp"
-#include "jpcToJson.hpp"
-#include "jsonToJpc.hpp"
+#include "../include/buffer.hpp"
+#include "../include/common_types.hpp"
+#include "../include/jpcToJson.hpp"
+#include "../include/jsonToJpc.hpp"
 #include <iomanip>
 #include <filesystem>
 #include <iostream>

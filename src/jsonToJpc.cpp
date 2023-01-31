@@ -1,4 +1,4 @@
-#include "jsonToJpc.hpp"
+#include "../include/jsonToJpc.hpp"
 
 Buffer toBuffer(JPA_BEM1& bem1){
     Buffer block;

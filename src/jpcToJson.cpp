@@ -1,4 +1,4 @@
-#include "jpcToJson.hpp"
+#include "../include/jpcToJson.hpp"
 
 using namespace std;
 

@@ -1,4 +1,4 @@
-#include "jpc.hpp"
+#include "../include/jpc.hpp"
 #include <assert.h>
 #include <iostream>
 #include <fstream>
