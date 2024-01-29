@@ -231,7 +231,7 @@ impl BSP1 {
             ui.label(RichText::new(format!("Color Flags: {:#02X}", self.color_flags)).monospace());
             ui.horizontal(|ui| {
                 ui.label("Color Animation Frame Count: ");
-                ui.add(DragValue::new(&mut self.anm_rndm).speed(1));
+                ui.add(DragValue::new(&mut self.color_anm_max_frame).speed(1));
             });
             ui.label(format!("Anim Random: {}", self.anm_rndm));
             ui.horizontal(|ui| {
