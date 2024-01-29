@@ -36,3 +36,10 @@ dump/*
 *.json
 *.jpc
 Release*
+/dump
+/output
+navi_table.dat
+
+# Added by cargo
+
+/target
