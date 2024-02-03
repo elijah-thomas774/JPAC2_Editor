@@ -1,6 +1,9 @@
 use binrw::binrw;
+use byteorder::ReadBytesExt;
 use egui::{CollapsingHeader, Color32, DragValue, Response, RichText, Ui};
 use std::fmt::Debug;
+
+use crate::jpa::{color_edit, write_color32};
 
 #[binrw]
 #[brw(big)]
@@ -92,6 +95,9 @@ pub struct FrameColor {
     #[bw(ignore)]
     #[br(calc = Color32::from_rgba_premultiplied(color_temp[0], color_temp[1], color_temp[2], color_temp[3]))]
     color:      Color32,
+    #[br(calc = color.to_hex())]
+    #[bw(ignore)]
+    color_str:  String,
 }
 
 impl FrameColor {
@@ -103,8 +109,7 @@ impl FrameColor {
                     .speed(1)
                     .clamp_range(0..=u16::MAX),
             );
-            ui.label(RichText::new(format!("Color : {}", self.color.to_hex())).monospace());
-            ui.color_edit_button_srgba(&mut self.color);
+            color_edit("Color:", &mut self.color, &mut self.color_str, ui);
             ui.button(RichText::new("X").color(Color32::RED))
         })
         .inner
@@ -137,43 +142,46 @@ pub struct BSP1 {
         + if color_flags & 0x02 != 0 {(color_prm_data.len()*6 + 3) & !3} else { 0 } // Color Prm Table
         + if color_flags & 0x08 != 0 {(color_env_data.len()*6 + 3) & !3} else { 0 } // Color Env Table
     ) as u32)]
-    _size:                    u32, // 0x04
-    flags:                    u32, // 0x08
+    _size:                u32, // 0x04
+    flags:                u32, // 0x08
     #[bw(calc = if color_flags & 0x02 != 0 { 0x34 + if flags & 0x0400_0000 != 0 {0x28} else {0} + ((tex_idx_anim_data.len() +3 ) & !3)} else {0} as u16)]
-    _color_prm_offs:          u16, // 0x0C
+    _color_prm_offs:      u16, // 0x0C
     #[bw(calc = if color_flags & 0x08 != 0 {0x34 + if flags & 0x0400_0000 != 0 {0x28} else {0} + ((tex_idx_anim_data.len() + 3) & !3) + ((color_prm_data.len()*6 + 3) & !3)} else {0} as u16)]
-    _color_env_offs:          u16, // 0x0E
-    base_size:                [f32; 2], // 0x10
-    blend_mode_flags:         u16, // 0x18
-    alpha_cmpr_flags:         u8,  // 0x1A
-    alpha_ref_0:              u8,  // 0x1B
-    alpha_ref_1:              u8,  // 0x1C
-    z_mode_flags:             u8,  // 0x1D
-    tex_flags:                u8,  // 0x1E
+    _color_env_offs:      u16, // 0x0E
+    base_size:            [f32; 2], // 0x10
+    blend_mode_flags:     u16, // 0x18
+    alpha_cmpr_flags:     u8,  // 0x1A
+    alpha_ref_0:          u8,  // 0x1B
+    alpha_ref_1:          u8,  // 0x1C
+    z_mode_flags:         u8,  // 0x1D
+    tex_flags:            u8,  // 0x1E
     #[br(temp)]
     #[bw(calc = tex_idx_anim_data.len() as u8)]
-    tex_idx_anm_count:        u8, // 0x1F
-    tex_idx:                  u8,  // 0x20
-    color_flags:              u8,  // 0x21
+    tex_idx_anm_count:    u8, // 0x1F
+    tex_idx:              u8,  // 0x20
+    color_flags:          u8,  // 0x21
     #[br(temp)]
     #[bw(calc = color_prm_data.len() as u8)]
-    color_prm_data_count:     u8, // 0x22
+    color_prm_data_count: u8, // 0x22
     #[br(temp)]
     #[bw(calc = color_env_data.len() as u8)]
-    color_env_data_count:     u8, // 0x23
-    color_anm_max_frame:      u16, // 0x24
-    #[br(temp)]
-    #[bw(calc = [color_prm.r(), color_prm.g(), color_prm.b(), color_prm.a()])]
-    color_prm_temp:           [u8; 4], // 0x26
-    #[br(temp)]
-    #[bw(calc = [color_env.r(), color_env.g(), color_env.b(), color_env.a()])]
-    color_env_temp:           [u8; 4], // 0x2A
-    #[br(calc = Color32::from_rgba_premultiplied(color_prm_temp[0], color_prm_temp[1], color_prm_temp[2], color_prm_temp[3]))]
+    color_env_data_count: u8, // 0x23
+    color_anm_max_frame:  u16, // 0x24
+
+    #[br(calc = Color32::from_rgba_premultiplied(s.read_u8().unwrap(), s.read_u8().unwrap(), s.read_u8().unwrap(),s.read_u8().unwrap()))]
+    #[bw(write_with = write_color32)]
+    color_prm:     Color32, // 0x 26
+    #[br(calc = color_prm.to_hex())]
     #[bw(ignore)]
-    color_prm:                Color32,
-    #[br(calc = Color32::from_rgba_premultiplied(color_env_temp[0], color_env_temp[1], color_env_temp[2], color_env_temp[3]))]
+    color_prm_str: String,
+
+    #[br(calc = Color32::from_rgba_premultiplied(s.read_u8().unwrap(), s.read_u8().unwrap(), s.read_u8().unwrap(),s.read_u8().unwrap()))]
+    #[bw(write_with = write_color32)]
+    color_env:     Color32, // 0x2A
+    #[br(calc = color_env.to_hex())]
     #[bw(ignore)]
-    color_env:                Color32,
+    color_env_str: String,
+
     anm_rndm:                 u8, // 0x2E
     color_loop_offset_mask:   u8, // 0x2F
     #[brw(pad_after = 3)]
@@ -234,18 +242,18 @@ impl BSP1 {
                 ui.add(DragValue::new(&mut self.color_anm_max_frame).speed(1));
             });
             ui.label(format!("Anim Random: {}", self.anm_rndm));
-            ui.horizontal(|ui| {
-                ui.label(
-                    RichText::new(format!("Color Prm: {}", self.color_prm.to_hex())).monospace(),
-                );
-                ui.color_edit_button_srgba(&mut self.color_prm);
-            });
-            ui.horizontal(|ui| {
-                ui.label(
-                    RichText::new(format!("Color Env: {}", self.color_env.to_hex())).monospace(),
-                );
-                ui.color_edit_button_srgba(&mut self.color_env);
-            });
+            color_edit(
+                "Color Prm:",
+                &mut self.color_prm,
+                &mut self.color_prm_str,
+                ui,
+            );
+            color_edit(
+                "Color Env:",
+                &mut self.color_env,
+                &mut self.color_env_str,
+                ui,
+            );
             if let Some(extra_data) = &mut self.tex_scroll_anm_data {
                 extra_data.show_editor(ui);
             }

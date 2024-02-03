@@ -47,7 +47,7 @@ impl KFA1 {
         CollapsingHeader::new(format!("Key Frame {}", block_num)).show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Key Type:");
-                ComboBox::from_label("")
+                ComboBox::from_id_source(format!("Key Frame {}", block_num))
                     .selected_text(format!("{:?}", self.key_type))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.key_type, JPAKeyType::None, "None");

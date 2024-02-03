@@ -1,9 +1,12 @@
 use binrw::binrw;
+use byteorder::ReadBytesExt;
 use egui::{CollapsingHeader, Color32, DragValue, RichText, Ui};
 use std::fmt::Debug;
 
+use crate::jpa::{color_edit, write_color32};
+
 #[binrw]
-#[brw(big)]
+#[brw(big, stream = s)]
 #[derive(Debug)]
 pub struct SSP1 {
     #[br(temp, assert(size==0x48))]
@@ -19,22 +22,27 @@ pub struct SSP1 {
     pub inherit_scale:        f32,      // 0x28
     pub inherit_alpha:        f32,      // 0x2C
     pub inherit_rgb:          f32,      // 0x30
-    #[bw(calc = [color_prm.r(), color_prm.g(), color_prm.b(), color_prm.a()])]
-    color_temp:               [u8; 4], // 0x34
+
+    #[br(calc = Color32::from_rgba_premultiplied(s.read_u8().unwrap(), s.read_u8().unwrap(), s.read_u8().unwrap(),s.read_u8().unwrap()))]
+    #[bw(write_with = write_color32)]
+    pub color_prm: Color32, // 0x 34
+    #[br(calc = color_prm.to_hex())]
     #[bw(ignore)]
-    #[br(calc = Color32::from_rgba_premultiplied(color_temp[0], color_temp[1], color_temp[2], color_temp[3]))]
-    pub color_prm:            Color32, // 0x34
-    #[bw(calc = [color_env.r(), color_env.g(), color_env.b(), color_env.a()])]
-    color_temp:               [u8; 4], // 0x38
+    color_prm_str: String,
+
+    #[br(calc = Color32::from_rgba_premultiplied(s.read_u8().unwrap(), s.read_u8().unwrap(), s.read_u8().unwrap(),s.read_u8().unwrap()))]
+    #[bw(write_with = write_color32)]
+    pub color_env: Color32, // 0x38
+    #[br(calc = color_env.to_hex())]
     #[bw(ignore)]
-    #[br(calc = Color32::from_rgba_premultiplied(color_temp[0], color_temp[1], color_temp[2], color_temp[3]))]
-    pub color_env:            Color32, // 0x38
-    pub timing:               f32,      // 0x3C
-    pub life:                 u16,      // 0x40
-    pub rate:                 u16,      // 0x42
-    pub step:                 u8,       // 0x44
-    pub texture_idx:          u8,       // 0x45
-    pub rotate_speed:         u16,      // 0x46
+    color_env_str: String,
+
+    pub timing:       f32, // 0x3C
+    pub life:         u16, // 0x40
+    pub rate:         u16, // 0x42
+    pub step:         u8,  // 0x44
+    pub texture_idx:  u8,  // 0x45
+    pub rotate_speed: u16, // 0x46
 }
 
 impl SSP1 {
@@ -74,18 +82,18 @@ impl SSP1 {
                 ui.label("Inherit RGB: ");
                 ui.add(DragValue::new(&mut self.inherit_rgb).speed(1));
             });
-            ui.horizontal(|ui| {
-                ui.label(
-                    RichText::new(format!("Color Prm: {}", self.color_prm.to_hex())).monospace(),
-                );
-                ui.color_edit_button_srgba(&mut self.color_prm);
-            });
-            ui.horizontal(|ui| {
-                ui.label(
-                    RichText::new(format!("Color Env: {}", self.color_env.to_hex())).monospace(),
-                );
-                ui.color_edit_button_srgba(&mut self.color_env);
-            });
+            color_edit(
+                "Color Prm:",
+                &mut self.color_prm,
+                &mut self.color_prm_str,
+                ui,
+            );
+            color_edit(
+                "Color Env:",
+                &mut self.color_env,
+                &mut self.color_env_str,
+                ui,
+            );
             ui.horizontal(|ui| {
                 ui.label("Timing: ");
                 ui.add(DragValue::new(&mut self.timing).speed(1));

@@ -25,12 +25,26 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
+#[derive(Debug, Default, PartialEq)]
+enum FilterType {
+    #[default]
+    None,
+    Texture,
+    Resource,
+}
+
+#[derive(Debug, Default)]
+struct FilterSettings {
+    filter_text: String,
+    fitler_type: FilterType,
+}
+
 #[derive(Debug, Default)]
 struct MyApp {
     picked_path: Option<String>,
     jpac:        Option<JPAC>,
     edit:        jpa::Selected,
-    filter_text: String,
+    filter:      FilterSettings,
 }
 
 impl MyApp {
@@ -73,47 +87,16 @@ impl MyApp {
     }
 
     fn show_tree_view(&mut self, ctx: &egui::Context) {
-        if egui::SidePanel::left("side_panel")
+        egui::SidePanel::left("side_panel")
             .resizable(true)
             .default_width(250.0)
             .show(ctx, |ui| {
                 if let Some(jpac) = &mut self.jpac {
-                    jpac.show_tree_ui(&mut self.edit, &mut self.filter_text, ui);
+                    jpac.show_tree_ui(&mut self.edit, &mut self.filter, ui);
                 } else {
                     ui.label("Pick a File First");
                 }
-            })
-            .response
-            .hovered()
-        {
-            let down_pressed = ctx.input(|i| i.key_pressed(egui::Key::ArrowDown));
-            let up_pressed = ctx.input(|i| i.key_pressed(egui::Key::ArrowUp));
-            match self.edit {
-                jpa::Selected::Resource(idx) => {
-                    if up_pressed && idx != 0 {
-                        self.edit = jpa::Selected::Resource(idx - 1);
-                    } else if down_pressed {
-                        if let Some(jpac) = &self.jpac {
-                            if idx < jpac.get_num_resources() {
-                                self.edit = jpa::Selected::Resource(idx + 1);
-                            }
-                        }
-                    }
-                },
-                jpa::Selected::Texture(idx) => {
-                    if up_pressed && idx != 0 {
-                        self.edit = jpa::Selected::Texture(idx - 1);
-                    } else if down_pressed {
-                        if let Some(jpac) = &self.jpac {
-                            if idx < jpac.get_num_textures() {
-                                self.edit = jpa::Selected::Texture(idx + 1);
-                            }
-                        }
-                    }
-                },
-                jpa::Selected::None => {},
-            };
-        }
+            });
     }
 
     fn show_edit_view(&mut self, ctx: &egui::Context) {
