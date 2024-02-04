@@ -10,7 +10,7 @@ use crate::jpa::JPAC;
 use binrw::{BinRead, BinWrite};
 use eframe::egui;
 use egui::{menu, Ui};
-use jpa::{jpac2_11::resource::JPAResource, ResAlias};
+use jpa::jpac2_11::resource::JPAResource;
 
 mod jpa;
 mod ui_helpers;
@@ -133,6 +133,7 @@ impl MyApp {
         egui::TopBottomPanel::top("top_ribbon")
             .resizable(false)
             .show(ctx, |ui| {
+                ctx.settings_ui(ui);
                 self.show_menu(ui);
             });
     }

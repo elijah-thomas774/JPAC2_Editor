@@ -64,7 +64,7 @@ impl JPAResource {
     /// Shows the resource editor
     pub fn show_editor(&mut self, textures: &Vec<JPATexture>, ui: &mut Ui) {
         ui.label(RichText::new(format!(
-            "Editing Resource: {0:} [{0:#04X}]: {1:}",
+            "Editing Resource: {0:} [{0:#06X}]: {1:}",
             self.res_id, self.alias
         )));
         // Resource Name
