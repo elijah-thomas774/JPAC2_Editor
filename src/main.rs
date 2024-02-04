@@ -133,7 +133,6 @@ impl MyApp {
         egui::TopBottomPanel::top("top_ribbon")
             .resizable(false)
             .show(ctx, |ui| {
-                ctx.settings_ui(ui);
                 self.show_menu(ui);
             });
     }
