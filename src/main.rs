@@ -10,8 +10,10 @@ use crate::jpa::JPAC;
 use binrw::{BinRead, BinWrite};
 use eframe::egui;
 use egui::{menu, Ui};
+use jpa::{jpac2_11::resource::JPAResource, ResAlias};
 
 mod jpa;
+mod ui_helpers;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -31,12 +33,13 @@ enum FilterType {
     None,
     Texture,
     Resource,
+    Name,
 }
 
 #[derive(Debug, Default)]
 struct FilterSettings {
-    filter_text: String,
-    fitler_type: FilterType,
+    text: String,
+    filter_type: FilterType,
 }
 
 #[derive(Debug, Default)]
@@ -53,16 +56,64 @@ impl MyApp {
             ui.menu_button("File", |ui| {
                 if ui.button("Open JPC").clicked() {
                     if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("JPC", &["jpc"])
-                        .pick_file()
+                    .add_filter("JPC", &["jpc"])
+                    .pick_file()
                     {
                         self.picked_path = Some(path.display().to_string());
                         self.jpac = None;
                     }
                     ui.close_menu();
                 }
-                if ui.button("Open JPN").clicked() {
+                if ui.button("Open Alias").clicked() {if let Some(path) = &rfd::FileDialog::new()
+                    .set_file_name("resource_alias.json")
+                    .add_filter("Resource Alias", &["json"])
+                    .pick_file()
+                    {
+                        let mut f = File::open(path).expect("Unable to open file");
+                        if let Some(jpac) = &mut self.jpac {
+                            jpac.apply_alias(&serde_json::from_reader(&mut f).unwrap());
+                        }
+                    }
                     ui.close_menu();
+                }
+                if ui.button("Save Alias").clicked() {
+                    if let Some(path) = &rfd::FileDialog::new()
+                    .set_file_name("resource_alias.json")
+                    .add_filter("Resource Alias", &["json"])
+                    .save_file()
+                    {
+                        let mut f = File::create(path).expect("Unable to open/create file");
+                        if let Some(jpac) = &self.jpac {
+                            serde_json::to_writer_pretty(&mut f, &jpac.export_alias()).unwrap();
+                        }
+                    }
+                    ui.close_menu();
+                }
+                // TODO: Make this version dependent
+                if ui.button("Import Resource").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("JPC2-11 Resource", &["jpc2-11"])
+                        .pick_file()
+                    {
+                        let path = path.display().to_string();
+                        let mut file_contents: Vec<u8> = Vec::new();
+                        File::open(&path)
+                            .expect("File Could not be opened")
+                            .read_to_end(&mut file_contents)
+                            .expect("Could not Read File Contents");
+                        match JPAResource::read(&mut Cursor::new(file_contents)) {
+                            Ok(in_res) => {
+                                if let Some(JPAC::JPAC2_11(jpac)) = &mut self.jpac {
+                                    if let Some(res) = jpac.resources.iter_mut().find(|res| res.res_id == in_res.res_id) {
+                                        *res = in_res;
+                                    }
+                                }
+                            },
+                            Err(msg) => {
+                                println!("{msg}");
+                            },
+                        }
+                    }
                 }
                 if ui.button("Save").clicked() {
                     if let Some(path) = &rfd::FileDialog::new()
@@ -101,9 +152,13 @@ impl MyApp {
 
     fn show_edit_view(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
+            // The Main Edit Panel
             if let Some(jpac) = &mut self.jpac {
                 jpac.show_editor(self.edit, ui);
-            } else {
+            } 
+            // There isnt anything to edit if there isnt a file
+            else {
+                ui.label("Welcome to the JPAC Editor! \n To get started, go to the `File` tab and select the .jpc file. \n Note: Currently the program only support JPAC2-11 (Version for Skyward Sword)");
                 if let Some(picked_path) = &self.picked_path {
                     let mut file_contents: Vec<u8> = Vec::new();
                     File::open(&picked_path)
@@ -112,11 +167,10 @@ impl MyApp {
                         .expect("Could not Read File Contents");
                     match JPAC::read(&mut Cursor::new(file_contents)) {
                         Ok(mut jpac) => {
-                            jpac.correct_parsing();
+                            jpac.load_textures(ctx);
                             self.jpac = Some(jpac);
                         },
                         Err(msg) => {
-                            ui.label("The file is either an incorrect Version or incorrect format");
                             println!("{msg}");
                             self.picked_path = None;
                         },

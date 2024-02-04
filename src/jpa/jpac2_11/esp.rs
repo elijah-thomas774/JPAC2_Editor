@@ -1,6 +1,8 @@
 use binrw::binrw;
-use egui::{CollapsingHeader, DragValue, RichText, Ui};
+use egui::{RichText, Ui};
 use std::fmt::Debug;
+
+use crate::ui_helpers::num_edit;
 
 #[binrw]
 #[brw(big)]
@@ -36,96 +38,28 @@ pub struct ESP1 {
 
 impl ESP1 {
     pub fn show_editor(&mut self, ui: &mut Ui) {
-        CollapsingHeader::new("Extra Shape").show(ui, |ui| {
-            ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
-            ui.horizontal(|ui| {
-                ui.label("Scale In Timing: ");
-                ui.add(DragValue::new(&mut self.scale_in_timing).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Out Timing: ");
-                ui.add(DragValue::new(&mut self.scale_out_timing).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale In X: ");
-                ui.add(DragValue::new(&mut self.scale_in_value_x).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Out X: ");
-                ui.add(DragValue::new(&mut self.scale_out_value_x).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale In Y: ");
-                ui.add(DragValue::new(&mut self.scale_in_value_y).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Out Y ");
-                ui.add(DragValue::new(&mut self.scale_out_value_y).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Out Random: ");
-                ui.add(DragValue::new(&mut self.scale_out_random).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Animation Frames X: ");
-                ui.add(DragValue::new(&mut self.scale_anm_max_frame_x).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Scale Animation Frames Y: ");
-                ui.add(DragValue::new(&mut self.scale_anm_max_frame_y).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha In Timing: ");
-                ui.add(DragValue::new(&mut self.alpha_in_timing).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Out Timing: ");
-                ui.add(DragValue::new(&mut self.alpha_out_timing).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha In: ");
-                ui.add(DragValue::new(&mut self.alpha_in_value).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Base: ");
-                ui.add(DragValue::new(&mut self.alpha_base_value).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Out: ");
-                ui.add(DragValue::new(&mut self.alpha_out_value).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Wave Random: ");
-                ui.add(DragValue::new(&mut self.alpha_wave_random).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Wave Frequency: ");
-                ui.add(DragValue::new(&mut self.alpha_wave_frequency).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Alpha Wave Amplitude: ");
-                ui.add(DragValue::new(&mut self.alpha_wave_amplitude).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Rotate Angle: ");
-                ui.add(DragValue::new(&mut self.rotate_angle).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Rotate Angle Random: ");
-                ui.add(DragValue::new(&mut self.rotate_angle_random).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Rotate Speed: ");
-                ui.add(DragValue::new(&mut self.rotate_speed).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Rotate Speed Random: ");
-                ui.add(DragValue::new(&mut self.rotate_speed_random).speed(1));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Rotate Direction: ");
-                ui.add(DragValue::new(&mut self.rotate_direction).speed(1));
-            });
-        });
+        ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
+        num_edit(ui, &mut self.scale_in_timing, "Scale In Timing: ");
+        num_edit(ui, &mut self.scale_out_timing, "Scale Out Timing: ");
+        num_edit(ui, &mut self.scale_in_value_x, "Scale In X: ");
+        num_edit(ui, &mut self.scale_out_value_x, "Scale Out X: ");
+        num_edit(ui, &mut self.scale_in_value_y, "Scale In Y: ");
+        num_edit(ui, &mut self.scale_out_value_y, "Scale Out Y ");
+        num_edit(ui, &mut self.scale_out_random, "Scale Out Random: ");
+        num_edit(ui, &mut self.scale_anm_max_frame_x, "Scale Anim Frames X: ");
+        num_edit(ui, &mut self.scale_anm_max_frame_y, "Scale Anim Frames Y: ");
+        num_edit(ui, &mut self.alpha_in_timing, "Alpha In Timing: ");
+        num_edit(ui, &mut self.alpha_out_timing, "Alpha Out Timing: ");
+        num_edit(ui, &mut self.alpha_in_value, "Alpha In: ");
+        num_edit(ui, &mut self.alpha_base_value, "Alpha Base: ");
+        num_edit(ui, &mut self.alpha_out_value, "Alpha Out: ");
+        num_edit(ui, &mut self.alpha_wave_random, "Alpha Wave Random: ");
+        num_edit(ui, &mut self.alpha_wave_frequency, "Alpha Wave Frequency: ");
+        num_edit(ui, &mut self.alpha_wave_amplitude, "Alpha Wave Amplitude: ");
+        num_edit(ui, &mut self.rotate_angle, "Rotate Angle: ");
+        num_edit(ui, &mut self.rotate_angle_random, "Rotate Angle Random: ");
+        num_edit(ui, &mut self.rotate_speed, "Rotate Speed: ");
+        num_edit(ui, &mut self.rotate_speed_random, "Rotate Speed Random: ");
+        num_edit(ui, &mut self.rotate_direction, "Rotate Direction: ");
     }
 }

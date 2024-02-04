@@ -3,7 +3,7 @@ use byteorder::ReadBytesExt;
 use egui::{CollapsingHeader, Color32, DragValue, Response, RichText, Ui};
 use std::fmt::Debug;
 
-use crate::jpa::{color_edit, write_color32};
+use crate::ui_helpers::{color_edit, write_color32};
 
 #[binrw]
 #[brw(big)]
@@ -109,7 +109,7 @@ impl FrameColor {
                     .speed(1)
                     .clamp_range(0..=u16::MAX),
             );
-            color_edit("Color:", &mut self.color, &mut self.color_str, ui);
+            color_edit(ui, &mut self.color, &mut self.color_str, "Color:");
             ui.button(RichText::new("X").color(Color32::RED))
         })
         .inner
@@ -203,100 +203,95 @@ pub struct BSP1 {
 
 impl BSP1 {
     pub fn show_editor(&mut self, ui: &mut Ui) {
-        CollapsingHeader::new("Base Shape").show(ui, |ui| {
-            ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
-            ui.horizontal(|ui| {
-                ui.label("Size: ");
-                ui.add(
-                    DragValue::new(&mut self.base_size[0])
-                        .speed(1)
-                        .prefix("x: "),
-                );
-                ui.add(
-                    DragValue::new(&mut self.base_size[1])
-                        .speed(1)
-                        .prefix("y: "),
-                );
-            });
-            ui.label(
-                RichText::new(format!("Blend Mode Flags: {:#04X}", self.blend_mode_flags))
-                    .monospace(),
+        ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
+        ui.horizontal(|ui| {
+            ui.label("Size: ");
+            ui.add(
+                DragValue::new(&mut self.base_size[0])
+                    .speed(1)
+                    .prefix("x: "),
             );
-            ui.label(format!(
-                "Alpha Compare Flags: {:#02X}",
-                self.alpha_cmpr_flags
-            ));
-            ui.label(
-                RichText::new(format!("Z Mode Flags: {:#02X}", self.z_mode_flags)).monospace(),
+            ui.add(
+                DragValue::new(&mut self.base_size[1])
+                    .speed(1)
+                    .prefix("y: "),
             );
-            ui.label(RichText::new(format!("Texture Flags: {:#02X}", self.tex_flags)).monospace());
-            ui.horizontal(|ui| {
-                ui.label("Alpha Ref values: ");
-                ui.add(DragValue::new(&mut self.alpha_ref_0).speed(1).prefix("0: "));
-                ui.add(DragValue::new(&mut self.alpha_ref_0).speed(1).prefix("1: "));
-            });
-            ui.label(format!("Textures Index: {}   ", self.tex_idx));
-            ui.label(RichText::new(format!("Color Flags: {:#02X}", self.color_flags)).monospace());
-            ui.horizontal(|ui| {
-                ui.label("Color Animation Frame Count: ");
-                ui.add(DragValue::new(&mut self.color_anm_max_frame).speed(1));
-            });
-            ui.label(format!("Anim Random: {}", self.anm_rndm));
-            color_edit(
-                "Color Prm:",
-                &mut self.color_prm,
-                &mut self.color_prm_str,
-                ui,
-            );
-            color_edit(
-                "Color Env:",
-                &mut self.color_env,
-                &mut self.color_env_str,
-                ui,
-            );
-            if let Some(extra_data) = &mut self.tex_scroll_anm_data {
-                extra_data.show_editor(ui);
+        });
+        ui.label(
+            RichText::new(format!("Blend Mode Flags: {:#04X}", self.blend_mode_flags)).monospace(),
+        );
+        ui.label(format!(
+            "Alpha Compare Flags: {:#02X}",
+            self.alpha_cmpr_flags
+        ));
+        ui.label(RichText::new(format!("Z Mode Flags: {:#02X}", self.z_mode_flags)).monospace());
+        ui.label(RichText::new(format!("Texture Flags: {:#02X}", self.tex_flags)).monospace());
+        ui.horizontal(|ui| {
+            ui.label("Alpha Ref values: ");
+            ui.add(DragValue::new(&mut self.alpha_ref_0).speed(1).prefix("0: "));
+            ui.add(DragValue::new(&mut self.alpha_ref_0).speed(1).prefix("1: "));
+        });
+        ui.label(format!("Textures Index: {}   ", self.tex_idx));
+        ui.label(RichText::new(format!("Color Flags: {:#02X}", self.color_flags)).monospace());
+        ui.horizontal(|ui| {
+            ui.label("Color Animation Frame Count: ");
+            ui.add(DragValue::new(&mut self.color_anm_max_frame).speed(1));
+        });
+        ui.label(format!("Anim Random: {}", self.anm_rndm));
+        color_edit(
+            ui,
+            &mut self.color_prm,
+            &mut self.color_prm_str,
+            "Color Prm:",
+        );
+        color_edit(
+            ui,
+            &mut self.color_env,
+            &mut self.color_env_str,
+            "Color Env:",
+        );
+        if let Some(extra_data) = &mut self.tex_scroll_anm_data {
+            extra_data.show_editor(ui);
+        }
+
+        ui.label(format!(
+            "Texture Index:  {:?}",
+            self.tex_idx_anim_data.as_slice()
+        ));
+
+        CollapsingHeader::new("Color Prm Table").show(ui, |ui| {
+            let mut delete_pressed: Option<usize> = None;
+            for n in 0..self.color_prm_data.len() {
+                if self.color_prm_data[n].show_editor(ui).clicked() {
+                    delete_pressed = Some(n);
+                }
             }
-
-            ui.label(format!(
-                "Texture Index:  {:?}",
-                self.tex_idx_anim_data.as_slice()
-            ));
-
-            CollapsingHeader::new("Color Prm Table").show(ui, |ui| {
-                let mut delete_pressed: Option<usize> = None;
-                for n in 0..self.color_prm_data.len() {
-                    if self.color_prm_data[n].show_editor(ui).clicked() {
-                        delete_pressed = Some(n);
-                    }
+            if let Some(idx) = delete_pressed {
+                self.color_prm_data.remove(idx);
+            }
+            if ui
+                .button(RichText::new("+").color(Color32::GREEN))
+                .clicked()
+            {
+                self.color_prm_data.push(FrameColor::default());
+            }
+        });
+        CollapsingHeader::new("Color Env Table").show(ui, |ui| {
+            let mut delete_pressed: Option<usize> = None;
+            for n in 0..self.color_env_data.len() {
+                if self.color_env_data[n].show_editor(ui).clicked() {
+                    delete_pressed = Some(n);
                 }
-                if let Some(idx) = delete_pressed {
-                    self.color_prm_data.remove(idx);
-                }
-                if ui
-                    .button(RichText::new("+").color(Color32::GREEN))
-                    .clicked()
-                {
-                    self.color_prm_data.push(FrameColor::default());
-                }
-            });
-            CollapsingHeader::new("Color Env Table").show(ui, |ui| {
-                let mut delete_pressed: Option<usize> = None;
-                for n in 0..self.color_env_data.len() {
-                    if self.color_env_data[n].show_editor(ui).clicked() {
-                        delete_pressed = Some(n);
-                    }
-                }
-                if let Some(idx) = delete_pressed {
-                    self.color_env_data.remove(idx);
-                }
-                if ui
-                    .button(RichText::new("+").color(Color32::GREEN))
-                    .clicked()
-                {
-                    self.color_env_data.push(FrameColor::default());
-                }
-            });
+            }
+            if let Some(idx) = delete_pressed {
+                self.color_env_data.remove(idx);
+            }
+            if ui
+                .button(RichText::new("+").color(Color32::GREEN))
+                .clicked()
+            {
+                self.color_env_data.push(FrameColor::default());
+            }
         });
     }
 }

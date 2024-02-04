@@ -1,42 +1,17 @@
 use std::fmt::Debug;
 
-use egui::{Color32, ComboBox, ScrollArea, TextEdit, TextStyle, Ui};
+use egui::{ComboBox, Context, ScrollArea, Ui};
 
-use binrw::{binrw, BinResult, BinWrite};
+use binrw::binrw;
 
 use crate::{FilterSettings, FilterType};
 
 pub mod jpac2_11;
 
-#[binrw::writer(writer, endian)]
-pub fn write_color32(clr: &Color32) -> BinResult<()> {
-    clr.r().write_options(writer, endian, ())?;
-    clr.g().write_options(writer, endian, ())?;
-    clr.b().write_options(writer, endian, ())?;
-    clr.a().write_options(writer, endian, ())?;
-    Ok(())
-}
-
-pub fn color_edit(label: &str, color: &mut Color32, color_str: &mut String, ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.label(label);
-        if TextEdit::singleline(color_str)
-            .font(TextStyle::Monospace)
-            .desired_width(0.0)
-            .clip_text(false)
-            .show(ui)
-            .response
-            .lost_focus()
-        {
-            match Color32::from_hex(color_str.as_str()) {
-                Ok(clr) => *color = clr,
-                Err(_) => *color_str = color.to_hex(),
-            };
-        };
-        if ui.color_edit_button_srgba(color).changed() {
-            *color_str = color.to_hex();
-        };
-    });
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct ResAlias {
+    pub res_id: u16,
+    pub name:   String,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -60,20 +35,41 @@ pub enum JPAC {
 }
 
 impl JPAC {
-    pub fn correct_parsing(&mut self) {
+    pub fn load_textures(&mut self, ctx: &Context) {
         match self {
-            JPAC::JPAC2_11(jpac) => jpac.correct_parsing(),
+            JPAC::JPAC2_11(jpac) => jpac.textures.iter_mut().for_each(|e| e.load_image(ctx)),
         }
     }
 
-    pub fn get_num_resources(&self) -> usize {
+    pub fn export_alias(&self) -> Vec<ResAlias> {
         match self {
-            JPAC::JPAC2_11(jpac) => jpac.resources.len(),
+            JPAC::JPAC2_11(jpac) => {
+                jpac.resources
+                    .iter()
+                    .filter(|res| res.alias != format!("Resource {}", res.res_id))
+                    .map(|res| {
+                        ResAlias {
+                            res_id: res.res_id,
+                            name:   res.alias.clone(),
+                        }
+                    })
+                    .collect()
+            },
         }
     }
-    pub fn get_num_textures(&self) -> usize {
+
+    pub fn apply_alias(&mut self, alias: &Vec<ResAlias>) {
         match self {
-            JPAC::JPAC2_11(jpac) => jpac.textures.len(),
+            JPAC::JPAC2_11(jpac) => {
+                for ResAlias { res_id: id, name } in alias {
+                    for res in &mut jpac.resources {
+                        if res.res_id == *id {
+                            res.alias = name.clone();
+                            break;
+                        }
+                    }
+                }
+            },
         }
     }
 
@@ -86,14 +82,15 @@ impl JPAC {
         // Filter Arrea
         ui.horizontal(|ui| {
             ui.label("Filter: ");
-            ui.text_edit_singleline(&mut filter.filter_text);
+            ui.text_edit_singleline(&mut filter.text);
         });
         let force_filter = ComboBox::from_label("Filter Type")
-            .selected_text(format!("{:?}", filter.fitler_type))
+            .selected_text(format!("{:?}", filter.filter_type))
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut filter.fitler_type, FilterType::None, "None");
-                ui.selectable_value(&mut filter.fitler_type, FilterType::Resource, "Resource ID");
-                ui.selectable_value(&mut filter.fitler_type, FilterType::Texture, "Texture");
+                ui.selectable_value(&mut filter.filter_type, FilterType::None, "None");
+                ui.selectable_value(&mut filter.filter_type, FilterType::Resource, "Resource ID");
+                ui.selectable_value(&mut filter.filter_type, FilterType::Texture, "Texture");
+                ui.selectable_value(&mut filter.filter_type, FilterType::Name, "Name");
             })
             .response
             .changed();

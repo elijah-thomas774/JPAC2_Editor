@@ -3,7 +3,7 @@ use byteorder::ReadBytesExt;
 use egui::{CollapsingHeader, Color32, DragValue, RichText, Ui};
 use std::fmt::Debug;
 
-use crate::jpa::{color_edit, write_color32};
+use crate::ui_helpers::{color_edit, write_color32};
 
 #[binrw]
 #[brw(big, stream = s)]
@@ -83,16 +83,16 @@ impl SSP1 {
                 ui.add(DragValue::new(&mut self.inherit_rgb).speed(1));
             });
             color_edit(
-                "Color Prm:",
+                ui,
                 &mut self.color_prm,
                 &mut self.color_prm_str,
-                ui,
+                "Color Prm:",
             );
             color_edit(
-                "Color Env:",
+                ui,
                 &mut self.color_env,
                 &mut self.color_env_str,
-                ui,
+                "Color Env:",
             );
             ui.horizontal(|ui| {
                 ui.label("Timing: ");

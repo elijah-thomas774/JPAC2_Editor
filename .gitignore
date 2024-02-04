@@ -34,7 +34,7 @@
 # custom
 dump/*
 *.json
-*.jpc
+*.jpc*
 Release*
 /dump
 /output

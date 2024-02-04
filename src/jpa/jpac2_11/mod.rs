@@ -1,6 +1,10 @@
-use binrw::binrw;
-use egui::{Align, CollapsingHeader, Response, Ui};
-use std::{fmt::Debug, io, num, process::id};
+use binrw::{binrw, BinWrite};
+use egui::{CollapsingHeader, Image, Response, Ui, Vec2};
+use std::{
+    fmt::Debug,
+    fs::File,
+    io::{self},
+};
 
 pub mod bem;
 pub mod bsp;
@@ -16,9 +20,7 @@ pub mod tex;
 use resource::JPAResource;
 use tex::JPATexture;
 
-use crate::FilterSettings;
-
-use self::resource::DataBlock;
+use crate::{FilterSettings, FilterType};
 
 use super::Selected;
 
@@ -47,7 +49,7 @@ pub struct JPAC {
 }
 
 static mut RES_FILTER_VAL: Option<String> = None;
-static mut RES_FILTER_IDX: Vec<(usize, String)> = Vec::new();
+static mut RES_FILTER_IDX: Vec<usize> = Vec::new();
 
 static mut TEX_FILTER_VAL: Option<String> = None;
 static mut TEX_FILTER_IDX: Vec<(usize, String)> = Vec::new();
@@ -70,10 +72,10 @@ impl JPAC {
                 let filter_idx = unsafe { &mut RES_FILTER_IDX };
                 // filter condition
                 let change_filter = if (*filter_val).is_none() {
-                    *filter_val = Some(filter.filter_text.clone());
+                    *filter_val = Some(filter.text.clone());
                     true
                 } else if let Some(prev_fitler) = filter_val {
-                    *prev_fitler != filter.filter_text
+                    *prev_fitler != filter.text
                 } else {
                     force_filter
                 };
@@ -81,75 +83,60 @@ impl JPAC {
                 // Change based on filter
                 if change_filter {
                     let filter_conds: Vec<&str> =
-                        filter.filter_text.split(",").map(|s| s.trim()).collect();
+                        filter.text.split(",").map(|s| s.trim()).collect();
                     filter_idx.clear();
                     *filter_idx = self
                         .resources
                         .iter()
                         .enumerate()
-                        .filter_map(|(idx, res)| {
-                            let name = format!("Resource {}", res.res_id);
-                            for filt in filter_conds.iter() {
-                                match filter.fitler_type {
-                                    crate::FilterType::Texture => {
-                                        // Grab Tex
-                                        let textures = res
-                                            .blocks
-                                            .iter()
-                                            .find(|&blk| {
-                                                match blk {
-                                                    DataBlock::TextureDataBase(_) => true,
-                                                    _ => false,
-                                                }
-                                            })
-                                            .and_then(|tdb| {
-                                                if let DataBlock::TextureDataBase(tdb) = tdb {
-                                                    Some(&tdb.textures)
-                                                } else {
-                                                    None
-                                                }
-                                            })
-                                            .expect("Could not Find Texture Block");
-                                        // Search for it
-                                        for tex_idx in textures {
-                                            if std::str::from_utf8(
-                                                &self.textures[*tex_idx as usize].name,
-                                            )
-                                            .unwrap()
-                                            .contains(filt)
-                                            {
-                                                return Some((idx, name));
-                                            }
-                                        }
-                                    },
-                                    crate::FilterType::Resource => {
-                                        match filt.parse::<u16>() {
-                                            Ok(id) => {
-                                                if id == res.res_id {
-                                                    return Some((idx, name));
-                                                }
-                                            },
-                                            Err(_) => {}, // Fail Silently
-                                        };
-                                    },
-                                    _ => return Some((idx, name)),
-                                }
+                        .filter_map(|(idx, res)| -> Option<usize> {
+                            // If no filters
+                            if filter_conds.is_empty() || filter.text.is_empty() {
+                                return Some(idx);
                             }
-                            None
+                            // Custom status per filter type
+                            match filter.filter_type {
+                                // Remove all filtered Values
+                                FilterType::None => Some(idx),
+                                // Scan the Texture lookup and match it to desired texture names
+                                FilterType::Texture => {
+                                    let names =
+                                        res.get_textures().get_texture_names(&self.textures);
+                                    filter_conds.iter().find_map(|str| -> Option<usize> {
+                                        names
+                                            .iter()
+                                            .find_map(|name| name.contains(str).then(|| idx))
+                                    })
+                                },
+                                // Matching resource ids
+                                FilterType::Resource => {
+                                    filter_conds.iter().find_map(|str| -> Option<usize> {
+                                        str.parse::<u16>()
+                                            .is_ok_and(|id| res.res_id == id)
+                                            .then(|| idx)
+                                    })
+                                },
+                                // Matching Resource Names
+                                FilterType::Name => {
+                                    filter_conds
+                                        .iter()
+                                        .find_map(|str| res.alias.contains(str).then(|| idx))
+                                },
+                            }
                         })
                         .collect();
                 }
 
                 // List all resources
-                for (idx, name) in filter_idx.iter() {
+                for &idx in filter_idx.iter() {
                     let checked = if let Selected::Resource(sel) = *selected {
-                        sel == *idx
+                        sel == idx
                     } else {
                         false
                     };
-                    let response = ui.selectable_label(checked, name);
+                    let response = ui.selectable_label(checked, &self.resources[idx].alias);
                     if response.clicked() {
-                        *selected = Selected::Resource(*idx);
+                        *selected = Selected::Resource(idx);
                     }
                     res_responses.push(response);
                 }
@@ -161,10 +148,10 @@ impl JPAC {
                 let filter_idx = unsafe { &mut TEX_FILTER_IDX };
                 // filter condition
                 let change_filter = if (*filter_val).is_none() {
-                    *filter_val = Some(filter.filter_text.clone());
+                    *filter_val = Some(filter.text.clone());
                     true
                 } else if let Some(prev_fitler) = filter_val {
-                    *prev_fitler != filter.filter_text
+                    *prev_fitler != filter.text
                 } else {
                     false
                 };
@@ -177,10 +164,10 @@ impl JPAC {
                         .enumerate()
                         .filter_map(|(idx, tex)| {
                             let name = std::str::from_utf8(&tex.name).unwrap();
-                            match filter.fitler_type {
+                            match filter.filter_type {
                                 crate::FilterType::Texture => {
                                     for filt in filter
-                                        .filter_text
+                                        .text
                                         .split(",")
                                         .map(|s| s.trim())
                                         .collect::<Vec<&str>>()
@@ -218,14 +205,14 @@ impl JPAC {
                 Selected::Resource(idx) => {
                     let filter_idx = unsafe { &mut RES_FILTER_IDX };
                     let idx =
-                        if let Some(i) = filter_idx.iter().enumerate().find(|(_, e)| e.0 == idx) {
+                        if let Some(i) = filter_idx.iter().enumerate().find(|(_, &e)| e == idx) {
                             i.0
                         } else {
                             0
                         };
                     let idx = idx.wrapping_sub(1).clamp(0, filter_idx.len() - 1);
                     res_responses[idx].scroll_to_me(None);
-                    Selected::Resource(filter_idx[idx].0)
+                    Selected::Resource(filter_idx[idx])
                 },
                 Selected::Texture(idx) => {
                     let filter_idx = unsafe { &mut TEX_FILTER_IDX };
@@ -246,7 +233,7 @@ impl JPAC {
                 Selected::Resource(idx) => {
                     let filter_idx = unsafe { &mut RES_FILTER_IDX };
                     let idx =
-                        if let Some(i) = filter_idx.iter().enumerate().find(|(_, e)| e.0 == idx) {
+                        if let Some(i) = filter_idx.iter().enumerate().find(|(_, &e)| e == idx) {
                             i.0
                         } else {
                             0
@@ -256,7 +243,7 @@ impl JPAC {
                         idx = 0;
                     }
                     res_responses[idx].scroll_to_me(None);
-                    Selected::Resource(filter_idx[idx].0)
+                    Selected::Resource(filter_idx[idx])
                 },
                 Selected::Texture(idx) => {
                     let filter_idx = unsafe { &mut TEX_FILTER_IDX };
@@ -280,53 +267,42 @@ impl JPAC {
     pub fn show_edit_ui(&mut self, selected: Selected, ui: &mut Ui) {
         match selected {
             Selected::Resource(idx) => {
-                let res = self.resources.get_mut(idx).unwrap();
-                let mut num_kfa = 0;
-                let mut num_fld = 0;
-                for block in &mut res.blocks {
-                    match block {
-                        DataBlock::Dynamics(bem) => bem.show_editor(ui),
-                        DataBlock::BaseShape(bsp) => bsp.show_editor(ui),
-                        DataBlock::ExTex(etx) => etx.show_editor(ui),
-                        DataBlock::ExtraShape(esp) => esp.show_editor(ui),
-                        DataBlock::ChildShape(ssp) => ssp.show_editor(ui),
-                        DataBlock::TextureDataBase(tdb) => {
-                            tdb.show_editor(&mut res.tdb_count, &self.textures, ui)
-                        },
-                        DataBlock::Field(fld) => {
-                            fld.show_editor(num_fld, ui);
-                            num_fld += 1;
-                        },
-                        DataBlock::KeyFrame(kfa) => {
-                            kfa.show_editor(num_kfa, ui);
-                            num_kfa += 1;
-                        },
-                    }
+                if let Some(resource) = self.resources.get_mut(idx) {
+                    ui.horizontal(|ui| {
+                        if ui.button("Export Resource").clicked() {
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter("JPC2-11", &["jpc2-11"])
+                                .set_file_name(format!("{}", resource.alias))
+                                .save_file()
+                            {
+                                let path = path.display().to_string();
+                                let mut f = File::create(&path).expect("File Could not be opened");
+                                resource
+                                    .write(&mut f)
+                                    .expect("Could not write Resource to file");
+                            }
+                        }
+                    });
+                    resource.show_editor(&self.textures, ui);
+                } else {
+                    ui.label(format!("The Resource at index {idx} does not exist."));
                 }
-                // ui.label(format!("{:#?}", &res));
             },
             Selected::Texture(idx) => {
                 if let Some(tex) = self.textures.get_mut(idx) {
-                    ui.label(format!("{:#?}", tex));
+                    if let Some(texture) = &tex.texture {
+                        ui.add(Image::from_texture(texture).shrink_to_fit().max_size(Vec2 {
+                            x: 480f32,
+                            y: 480f32,
+                        }));
+                    }
                 } else {
-                    ui.label("Somehow an out of bounds texture was selected");
+                    ui.label(format!("The Texture at index {idx} does not exist"));
                 }
             },
             Selected::None => {
-                ui.label("Select a Resource or Texture from the left side");
+                ui.label("To get started:\n\tSelect a Resource or Texture from the left side");
             },
-        }
-    }
-
-    pub fn correct_parsing(&mut self) {
-        for res in &mut self.resources {
-            for block in &mut res.blocks {
-                match block {
-                    // Couldnt figure out arg parsing, but this should work
-                    DataBlock::TextureDataBase(tdb) => tdb.textures.truncate(res.tdb_count.into()),
-                    _ => {},
-                }
-            }
         }
     }
 }

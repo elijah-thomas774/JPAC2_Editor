@@ -1,5 +1,5 @@
 use binrw::binrw;
-use egui::{CollapsingHeader, RichText, Ui};
+use egui::{ RichText, Ui};
 use std::fmt::Debug;
 
 #[binrw]
@@ -20,19 +20,17 @@ pub struct ETX1 {
 
 impl ETX1 {
     pub fn show_editor(&mut self, ui: &mut Ui) {
-        CollapsingHeader::new("ExTex").show(ui, |ui| {
-            ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
-            ui.label(format!(
-                "Values:\n\t{:.3?},\n\t{:.3?},\n\t{:.3?},\n\t{:.3?}",
-                &self.values[0..4],
-                &self.values[4..8],
-                &self.values[8..12],
-                &self.values[12..16]
-            ));
-            ui.label(format!("Unk: {:#02X}", self.unk));
-            ui.label(format!("Scale: {}", self.scale));
-            ui.label(format!("Indirect Texture Index: {}", self.ind_tex_id));
-            ui.label(format!("Indirect Texture Index 2: {}", self.ind_tex_id_2));
-        });
+        ui.label(RichText::new(format!("Flags: {:08X}", self.flags)).monospace());
+        ui.label(format!(
+            "Values:\n\t{:.3?},\n\t{:.3?},\n\t{:.3?},\n\t{:.3?}",
+            &self.values[0..4],
+            &self.values[4..8],
+            &self.values[8..12],
+            &self.values[12..16]
+        ));
+        ui.label(format!("Unk: {:#02X}", self.unk));
+        ui.label(format!("Scale: {}", self.scale));
+        ui.label(format!("Indirect Texture Index: {}", self.ind_tex_id));
+        ui.label(format!("Indirect Texture Index 2: {}", self.ind_tex_id_2));
     }
 }

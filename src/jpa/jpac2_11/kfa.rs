@@ -1,5 +1,5 @@
 use binrw::binrw;
-use egui::{Checkbox, CollapsingHeader, ComboBox, Ui};
+use egui::{Checkbox, ComboBox, Ui};
 use std::fmt::Debug;
 
 #[binrw]
@@ -43,61 +43,51 @@ pub struct KFA1 {
 }
 
 impl KFA1 {
-    pub fn show_editor(&mut self, block_num: usize, ui: &mut Ui) {
-        CollapsingHeader::new(format!("Key Frame {}", block_num)).show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Key Type:");
-                ComboBox::from_id_source(format!("Key Frame {}", block_num))
-                    .selected_text(format!("{:?}", self.key_type))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::None, "None");
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::Rate, "Rate");
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::VolumeSize,
-                            "VolumeSize",
-                        );
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::VolumeSweep,
-                            "VolumeSweep",
-                        );
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::VolumeMinRad,
-                            "VolumeMinRad",
-                        );
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::LifeTime, "LifeTime");
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::Moment, "Moment");
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::InitialVelOmni,
-                            "InitialVelOmni",
-                        );
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::InitialVelAxis,
-                            "InitialVelAxis",
-                        );
-                        ui.selectable_value(
-                            &mut self.key_type,
-                            JPAKeyType::InitialVelDir,
-                            "InitialVelDir",
-                        );
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::Spread, "Spread");
-                        ui.selectable_value(&mut self.key_type, JPAKeyType::Scale, "Scale");
-                    });
-            });
-            ui.label(format!("Unknown 0x0A: {:#02X}", self.unk_a));
-            ui.horizontal(|ui| {
-                ui.label("Loop: ");
-                ui.add(Checkbox::without_text(&mut self.is_loop_enable));
-            });
-            let chunks = self.key_values.as_chunks::<4>().0;
-            ui.label("Key Values: ");
-            for chunk in chunks {
-                ui.label(format!("\t{:.3?},", chunk));
-            }
+    pub fn show_editor(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.label("Key Type:");
+            ComboBox::from_id_source(std::ptr::addr_of!(self))
+                .selected_text(format!("{:?}", self.key_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::None, "None");
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::Rate, "Rate");
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::VolumeSize, "VolumeSize");
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::VolumeSweep, "VolumeSweep");
+                    ui.selectable_value(
+                        &mut self.key_type,
+                        JPAKeyType::VolumeMinRad,
+                        "VolumeMinRad",
+                    );
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::LifeTime, "LifeTime");
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::Moment, "Moment");
+                    ui.selectable_value(
+                        &mut self.key_type,
+                        JPAKeyType::InitialVelOmni,
+                        "InitialVelOmni",
+                    );
+                    ui.selectable_value(
+                        &mut self.key_type,
+                        JPAKeyType::InitialVelAxis,
+                        "InitialVelAxis",
+                    );
+                    ui.selectable_value(
+                        &mut self.key_type,
+                        JPAKeyType::InitialVelDir,
+                        "InitialVelDir",
+                    );
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::Spread, "Spread");
+                    ui.selectable_value(&mut self.key_type, JPAKeyType::Scale, "Scale");
+                });
         });
+        ui.label(format!("Unknown 0x0A: {:#02X}", self.unk_a));
+        ui.horizontal(|ui| {
+            ui.label("Loop: ");
+            ui.add(Checkbox::without_text(&mut self.is_loop_enable));
+        });
+        let chunks = self.key_values.as_chunks::<4>().0;
+        ui.label("Key Values: ");
+        for chunk in chunks {
+            ui.label(format!("\t{:.3?},", chunk));
+        }
     }
 }

@@ -1,6 +1,8 @@
 use binrw::binrw;
-use egui::{CollapsingHeader, DragValue, RichText, Ui};
+use egui::{RichText, Ui};
 use std::fmt::Debug;
+
+use crate::ui_helpers::{num_edit, nums_edit};
 
 #[binrw]
 #[brw(big)]
@@ -37,71 +39,32 @@ pub struct BEM1 {
     pub rate_step:         u8, // 0x78
 }
 
-fn add_f32_edit_ui(name: &str, val: &mut f32, ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.label(name);
-        ui.add(DragValue::new(val).speed(1))
-    });
-}
-fn add_i16_edit_ui(name: &str, val: &mut i16, ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.label(name);
-        ui.add(DragValue::new(val).speed(1))
-    });
-}
-
-fn add_f32_arr3_ui(name: &str, arr: &mut [f32; 3], ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.label(name);
-        ui.add(DragValue::new(&mut arr[0]).speed(1).prefix("x: "));
-        ui.add(DragValue::new(&mut arr[1]).speed(1).prefix("y: "));
-        ui.add(DragValue::new(&mut arr[2]).speed(1).prefix("z: "));
-    });
-}
-fn add_i16_arr3_ui(name: &str, arr: &mut [i16; 3], ui: &mut Ui) {
-    ui.horizontal(|ui| {
-        ui.label(name);
-        ui.add(DragValue::new(&mut arr[0]).speed(1).prefix("x: "));
-        ui.add(DragValue::new(&mut arr[1]).speed(1).prefix("y: "));
-        ui.add(DragValue::new(&mut arr[2]).speed(1).prefix("z: "));
-    });
-}
-
 impl BEM1 {
     pub fn show_editor(&mut self, ui: &mut Ui) {
-        CollapsingHeader::new("Dynamics").show(ui, |ui| {
-            ui.label(RichText::new(format!("Emitter Flags: {:08X}", self.emit_flags)).monospace());
-            ui.label(RichText::new(format!("Unknown Flags: {:08X}", self.unk_flags)).monospace());
-            add_f32_arr3_ui("Scale: ", &mut self.scale, ui);
-            add_f32_arr3_ui("Translation: ", &mut self.trans, ui);
-            add_f32_arr3_ui("Direction: ", &mut self.direction, ui);
-            add_f32_edit_ui("Velocity Omni: ", &mut self.initial_vel_omni, ui);
-            add_f32_edit_ui("Velocity Axis: ", &mut self.initial_vel_axis, ui);
-            add_f32_edit_ui("Velocity Random: ", &mut self.initial_vel_rndm, ui);
-            add_f32_edit_ui("Velocity Direction: ", &mut self.initial_vel_dir, ui);
-            add_f32_edit_ui("Spread: ", &mut self.spread, ui);
-            add_f32_edit_ui("Velocity Ratio: ", &mut self.initial_vel_ratio, ui);
-            add_f32_edit_ui("Rate: ", &mut self.rate, ui);
-            add_f32_edit_ui("Rate Random: ", &mut self.rate_rndm, ui);
-            add_f32_edit_ui("Life Time Random: ", &mut self.life_time_rndm, ui);
-            add_f32_edit_ui("Volume Sweep: ", &mut self.volume_sweep, ui);
-            add_f32_edit_ui("Volume Min Radius: ", &mut self.volume_min_rad, ui);
-            add_f32_edit_ui("Air Resistance: ", &mut self.air_resist, ui);
-            add_f32_edit_ui("Moment Random: ", &mut self.moment_rndm, ui);
-            add_i16_arr3_ui("Emitter Rotation: ", &mut self.emitter_rot, ui);
-            add_i16_edit_ui("Max Frame", &mut self.max_frame, ui);
-            add_i16_edit_ui("Start Frame", &mut self.start_frame, ui);
-            add_i16_edit_ui("Life Time", &mut self.life_time, ui);
-            add_i16_edit_ui("Volume Size", &mut self.volume_size, ui);
-            add_i16_edit_ui("Division Number", &mut self.div_number, ui);
-            ui.horizontal(|ui| {
-                ui.label("Rate Step: ");
-                ui.add(
-                    DragValue::new(&mut self.rate_step)
-                        .speed(1)
-                        .clamp_range(u8::MIN..=u8::MAX),
-                )
-            });
-        });
+        ui.label(RichText::new(format!("Emitter Flags: {:08X}", self.emit_flags)).monospace()); // TODO(Dropdown of Flags)
+        ui.label(RichText::new(format!("Unknown Flags: {:08X}", self.unk_flags)).monospace()); // TODO(Dropdown of Flags)
+        nums_edit(ui, &mut self.scale, "Scale: ");
+        nums_edit(ui, &mut self.trans, "Translation: ");
+        nums_edit(ui, &mut self.direction, "Direction: ");
+        num_edit(ui, &mut self.initial_vel_omni, "Velocity Omni: ");
+        num_edit(ui, &mut self.initial_vel_axis, "Velocity Axis: ");
+        num_edit(ui, &mut self.initial_vel_rndm, "Velocity Random: ");
+        num_edit(ui, &mut self.initial_vel_dir, "Velocity Direction: ");
+        num_edit(ui, &mut self.spread, "Spread: ");
+        num_edit(ui, &mut self.initial_vel_ratio, "Velocity Ratio: ");
+        num_edit(ui, &mut self.rate, "Rate: ");
+        num_edit(ui, &mut self.rate_rndm, "Rate Random: ");
+        num_edit(ui, &mut self.life_time_rndm, "Life Time Random: ");
+        num_edit(ui, &mut self.volume_sweep, "Volume Sweep: ");
+        num_edit(ui, &mut self.volume_min_rad, "Volume Min Radius: ");
+        num_edit(ui, &mut self.air_resist, "Air Resistance: ");
+        num_edit(ui, &mut self.moment_rndm, "Moment Random: ");
+        nums_edit(ui, &mut self.emitter_rot, "Emitter Rotation: ");
+        num_edit(ui, &mut self.max_frame, "Max Frame");
+        num_edit(ui, &mut self.start_frame, "Start Frame");
+        num_edit(ui, &mut self.life_time, "Life Time");
+        num_edit(ui, &mut self.volume_size, "Volume Size");
+        num_edit(ui, &mut self.div_number, "Division Number");
+        num_edit(ui, &mut self.rate_step, "Rate Step");
     }
 }
