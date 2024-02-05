@@ -1,7 +1,7 @@
-use super::{
-    bem::BEM1, bsp::BSP1, esp::ESP1, etx::ETX1, fld::FLD1, kfa::KFA1, ssp::SSP1, tdb::TDB1,
-    tex::JPATexture,
-};
+use crate::jpa::tex::JPATexture;
+
+use super::{bsp::BSP1, etx::ETX1};
+use crate::jpa::jpac2_10::{bem::BEM1, esp::ESP1, fld::FLD1, kfa::KFA1, ssp::SSP1, tdb::TDB1};
 use binrw::binrw;
 use egui::{CollapsingHeader, RichText, Ui};
 use std::fmt::Debug;

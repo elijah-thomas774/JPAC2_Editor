@@ -1,7 +1,8 @@
 use super::{
     bem::BEM1, bsp::BSP1, esp::ESP1, etx::ETX1, fld::FLD1, kfa::KFA1, ssp::SSP1, tdb::TDB1,
-    tex::JPATexture,
 };
+
+use crate::jpa::tex::JPATexture;
 use binrw::binrw;
 use egui::{CollapsingHeader, RichText, Ui};
 use std::fmt::Debug;

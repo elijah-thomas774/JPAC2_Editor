@@ -2,7 +2,7 @@ use binrw::binrw;
 use egui::{Image, Ui, Vec2};
 use std::fmt::Debug;
 
-use super::tex::JPATexture;
+use crate::jpa::tex::JPATexture;
 
 #[binrw]
 #[brw(big)]
@@ -36,7 +36,7 @@ impl TDB1 {
                         std::str::from_utf8(&tex.name).unwrap().trim_matches('\0')
                     ))
                     .on_hover_ui(|ui| {
-                        if let Some(texture) = &tex.texture {
+                        if let Some(texture) = tex.get_handle() {
                             ui.add(
                                 Image::from_texture(texture)
                                     .max_size(Vec2 { x: 200.0, y: 200.0 })

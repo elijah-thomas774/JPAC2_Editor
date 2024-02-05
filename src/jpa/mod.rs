@@ -8,6 +8,7 @@ use crate::{FilterSettings, FilterType};
 
 pub mod jpac2_10;
 pub mod jpac2_11;
+pub mod tex;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ResAlias {
@@ -29,7 +30,6 @@ impl Default for Selected {
 
 #[binrw]
 #[brw(big)]
-#[derive(Debug)]
 pub enum JPAC {
     #[brw(magic = b"JPAC2-10")]
     JPAC2_10(jpac2_10::JPAC),

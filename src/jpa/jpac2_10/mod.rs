@@ -1,7 +1,6 @@
 use binrw::{binrw, BinWrite};
 use egui::{CollapsingHeader, Image, Response, Ui, Vec2};
 use std::{
-    fmt::Debug,
     fs::File,
     io::{self},
 };
@@ -15,10 +14,9 @@ pub mod kfa;
 pub mod resource;
 pub mod ssp;
 pub mod tdb;
-pub mod tex;
 
+use crate::jpa::tex::JPATexture;
 use resource::JPAResource;
-use tex::JPATexture;
 
 use crate::{FilterSettings, FilterType};
 
@@ -26,7 +24,6 @@ use super::Selected;
 
 #[binrw]
 #[brw(big, stream = s)]
-#[derive(Debug)]
 pub struct JPAC {
     #[br(temp)]
     #[bw(calc = resources.len() as u16)]
@@ -46,13 +43,16 @@ pub struct JPAC {
     #[br(seek_before = io::SeekFrom::Start(texture_offset as _))]
     #[br(count = texture_count)]
     pub textures:         Vec<JPATexture>,
+
+    #[brw(ignore)]
+    res_filter_val: Option<String>,
+    #[brw(ignore)]
+    res_filter_idx: Vec<usize>,
+    #[brw(ignore)]
+    tex_filter_val: Option<String>,
+    #[brw(ignore)]
+    tex_filter_idx: Vec<(usize, String)>,
 }
-
-static mut RES_FILTER_VAL: Option<String> = None;
-static mut RES_FILTER_IDX: Vec<usize> = Vec::new();
-
-static mut TEX_FILTER_VAL: Option<String> = None;
-static mut TEX_FILTER_IDX: Vec<(usize, String)> = Vec::new();
 
 impl JPAC {
     pub fn show_tree_ui(
@@ -62,14 +62,14 @@ impl JPAC {
         force_filter: bool,
         ui: &mut Ui,
     ) {
-        ui.label("Version: JPAC2-10");
+        ui.label("Version: JPAC2_11");
         let mut res_responses: Vec<Response> = vec![];
         let mut tex_responses: Vec<Response> = vec![];
         CollapsingHeader::new("Resources")
             .default_open(false)
             .show(ui, |ui| {
-                let filter_val = unsafe { &mut RES_FILTER_VAL };
-                let filter_idx = unsafe { &mut RES_FILTER_IDX };
+                let filter_val = &mut self.res_filter_val;
+                let filter_idx = &mut self.res_filter_idx;
                 // filter condition
                 let change_filter = if (*filter_val).is_none() {
                     *filter_val = Some(filter.text.clone());
@@ -144,8 +144,8 @@ impl JPAC {
         CollapsingHeader::new("Textures")
             .default_open(false)
             .show(ui, |ui| {
-                let filter_val = unsafe { &mut TEX_FILTER_VAL };
-                let filter_idx = unsafe { &mut TEX_FILTER_IDX };
+                let filter_val = &mut self.tex_filter_val;
+                let filter_idx = &mut self.tex_filter_idx;
                 // filter condition
                 let change_filter = if (*filter_val).is_none() {
                     *filter_val = Some(filter.text.clone());
@@ -203,7 +203,7 @@ impl JPAC {
         if ui.input(|i| i.key_pressed(egui::Key::ArrowUp)) {
             *selected = match *selected {
                 Selected::Resource(idx) => {
-                    let filter_idx = unsafe { &mut RES_FILTER_IDX };
+                    let filter_idx = &self.res_filter_idx;
                     let idx =
                         if let Some(i) = filter_idx.iter().enumerate().find(|(_, &e)| e == idx) {
                             i.0
@@ -215,7 +215,7 @@ impl JPAC {
                     Selected::Resource(filter_idx[idx])
                 },
                 Selected::Texture(idx) => {
-                    let filter_idx = unsafe { &mut TEX_FILTER_IDX };
+                    let filter_idx = &self.tex_filter_idx;
                     let idx =
                         if let Some(i) = filter_idx.iter().enumerate().find(|(_, e)| e.0 == idx) {
                             i.0
@@ -231,7 +231,7 @@ impl JPAC {
         } else if ui.input(|i| i.key_pressed(egui::Key::ArrowDown)) {
             *selected = match *selected {
                 Selected::Resource(idx) => {
-                    let filter_idx = unsafe { &mut RES_FILTER_IDX };
+                    let filter_idx = &self.res_filter_idx;
                     let idx =
                         if let Some(i) = filter_idx.iter().enumerate().find(|(_, &e)| e == idx) {
                             i.0
@@ -246,7 +246,7 @@ impl JPAC {
                     Selected::Resource(filter_idx[idx])
                 },
                 Selected::Texture(idx) => {
-                    let filter_idx = unsafe { &mut TEX_FILTER_IDX };
+                    let filter_idx = &self.tex_filter_idx;
                     let idx =
                         if let Some(i) = filter_idx.iter().enumerate().find(|(_, e)| e.0 == idx) {
                             i.0
@@ -290,7 +290,7 @@ impl JPAC {
             },
             Selected::Texture(idx) => {
                 if let Some(tex) = self.textures.get_mut(idx) {
-                    if let Some(texture) = &tex.texture {
+                    if let Some(texture) = tex.get_handle() {
                         ui.add(Image::from_texture(texture).shrink_to_fit().max_size(Vec2 {
                             x: 480f32,
                             y: 480f32,

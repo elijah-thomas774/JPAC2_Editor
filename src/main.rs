@@ -13,7 +13,8 @@ use egui::{menu, Ui};
 use jpa::jpac2_11::resource::JPAResource;
 
 mod jpa;
-mod ui_helpers;
+pub mod ui_helpers;
+pub mod bti;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -42,7 +43,7 @@ struct FilterSettings {
     filter_type: FilterType,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct MyApp {
     picked_path: Option<String>,
     jpac:        Option<JPAC>,
