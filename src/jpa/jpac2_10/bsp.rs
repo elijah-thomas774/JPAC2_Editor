@@ -214,7 +214,11 @@ impl BSP1 {
                 .button(RichText::new("+").color(Color32::GREEN))
                 .clicked()
             {
-                self.color_prm_data.push(FrameColor::default());
+                self.color_prm_data.push(FrameColor {
+                    frame:     0,
+                    color:     Color32::WHITE,
+                    color_str: "#FFFFFFFF".to_string(),
+                });
             }
         });
         CollapsingHeader::new("Color Env Table").show(ui, |ui| {
@@ -231,7 +235,11 @@ impl BSP1 {
                 .button(RichText::new("+").color(Color32::GREEN))
                 .clicked()
             {
-                self.color_env_data.push(FrameColor::default());
+                self.color_env_data.push(FrameColor {
+                    frame:     0,
+                    color:     Color32::WHITE,
+                    color_str: "#FFFFFFFF".to_string(),
+                });
             }
         });
     }

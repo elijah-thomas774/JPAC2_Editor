@@ -10,7 +10,8 @@ use crate::jpa::JPAC;
 use binrw::{BinRead, BinWrite};
 use eframe::egui;
 use egui::{menu, Ui};
-use jpa::jpac2_11::resource::JPAResource;
+use jpa::ResouceSelector;
+
 
 mod jpa;
 pub mod ui_helpers;
@@ -49,6 +50,8 @@ struct MyApp {
     jpac:        Option<JPAC>,
     edit:        jpa::Selected,
     filter:      FilterSettings,
+    selected_resources: ResouceSelector,
+    show_exporter: bool,
 }
 
 impl MyApp {
@@ -90,31 +93,22 @@ impl MyApp {
                     }
                     ui.close_menu();
                 }
-                // TODO: Make this version dependent
-                if ui.button("Import Resource").clicked() {
+                if ui.button("Import Resources").clicked() {
                     if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("JPC2-11 Resource", &["jpc2-11"])
+                        .add_filter("JPA Resource", &["jpares"])
                         .pick_file()
                     {
                         let path = path.display().to_string();
-                        let mut file_contents: Vec<u8> = Vec::new();
-                        File::open(&path)
-                            .expect("File Could not be opened")
-                            .read_to_end(&mut file_contents)
-                            .expect("Could not Read File Contents");
-                        match JPAResource::read(&mut Cursor::new(file_contents)) {
-                            Ok(in_res) => {
-                                if let Some(JPAC::JPAC2_11(jpac)) = &mut self.jpac {
-                                    if let Some(res) = jpac.resources.iter_mut().find(|res| res.res_id == in_res.res_id) {
-                                        *res = in_res;
-                                    }
-                                }
-                            },
-                            Err(msg) => {
-                                println!("{msg}");
-                            },
+                        let mut f = File::open(&path)
+                            .expect("File Could not be opened");
+                        if let Some(jpac) = &mut self.jpac {
+                            print!("{:?}", jpac.import_resources(&mut f));
                         }
                     }
+                    ui.close_menu();
+                }
+                if ui.button("Export Resources").clicked() {
+                    self.show_exporter = true;
                 }
                 if ui.button("Save").clicked() {
                     if let Some(path) = &rfd::FileDialog::new()
@@ -154,8 +148,30 @@ impl MyApp {
     fn show_edit_view(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The Main Edit Panel
-            if let Some(jpac) = &mut self.jpac {
-                jpac.show_editor(self.edit, ui);
+             if let Some(jpac) = &mut self.jpac {
+                if self.show_exporter {
+                    ui.horizontal(|ui| {
+                        if ui.button("Export").clicked() {
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter("JPA Resource", &["jpares"])
+                                .save_file()
+                            {
+                                let path = path.display().to_string();
+                                let mut f = File::create(&path)
+                                    .expect("File Could not be opened");
+                                let _ = jpac.export_resources(&self.selected_resources.selected, &mut f);
+                            }
+                            self.show_exporter = false;
+                        }
+                        if ui.button("Cancel").clicked() {
+                            self.show_exporter = false;
+                        }
+                    });
+                    ui.label(format!("Selected Resources: {}", self.selected_resources.filter_subtext));
+                    jpac.resource_selector(&mut self.selected_resources, ui);
+                } else {
+                    jpac.show_editor(self.edit, ui);
+                }
             } 
             // There isnt anything to edit if there isnt a file
             else {
