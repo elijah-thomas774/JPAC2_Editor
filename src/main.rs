@@ -9,13 +9,12 @@ use std::{
 use crate::jpa::JPAC;
 use binrw::{BinRead, BinWrite};
 use eframe::egui;
-use egui::{menu, Ui};
-use jpa::ResouceSelector;
+use egui::{menu, Context, Ui};
+use jpa::{ResouceSelector, Selected};
 
-
+pub mod bti;
 mod jpa;
 pub mod ui_helpers;
-pub mod bti;
 
 fn main() -> Result<(), eframe::Error> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
@@ -29,7 +28,7 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Clone, Copy)]
 enum FilterType {
     #[default]
     None,
@@ -38,98 +37,241 @@ enum FilterType {
     Name,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
+enum MainWindowState {
+    #[default]
+    None,
+    Exporter,
+    Editor,
+    ErrorMessage(String),
+    Viewer, // NYI: Probably for a bit
+}
+
+#[derive(Default)]
 struct FilterSettings {
-    text: String,
+    text:        String,
     filter_type: FilterType,
 }
 
 #[derive(Default)]
 struct MyApp {
-    picked_path: Option<String>,
-    jpac:        Option<JPAC>,
-    edit:        jpa::Selected,
-    filter:      FilterSettings,
+    jpac:               Option<JPAC>,
+    tree_filter:        FilterSettings,
+    main_window:        MainWindowState,
     selected_resources: ResouceSelector,
-    show_exporter: bool,
+    selected:           Selected,
 }
 
+/// Menu Bar
 impl MyApp {
-    fn show_menu(&mut self, ui: &mut Ui) {
+    fn menu_bar(&mut self, ui: &mut Ui, ctx: &Context) {
         menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
-                if ui.button("Open JPC").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                    .add_filter("JPC", &["jpc"])
-                    .pick_file()
-                    {
-                        self.picked_path = Some(path.display().to_string());
-                        self.jpac = None;
-                    }
-                    ui.close_menu();
-                }
-                if ui.button("Open Alias").clicked() {if let Some(path) = &rfd::FileDialog::new()
-                    .set_file_name("resource_alias.json")
-                    .add_filter("Resource Alias", &["json"])
-                    .pick_file()
-                    {
-                        let mut f = File::open(path).expect("Unable to open file");
-                        if let Some(jpac) = &mut self.jpac {
-                            jpac.apply_alias(&serde_json::from_reader(&mut f).unwrap());
-                        }
-                    }
-                    ui.close_menu();
-                }
-                if ui.button("Save Alias").clicked() {
-                    if let Some(path) = &rfd::FileDialog::new()
-                    .set_file_name("resource_alias.json")
-                    .add_filter("Resource Alias", &["json"])
-                    .save_file()
-                    {
-                        let mut f = File::create(path).expect("Unable to open/create file");
-                        if let Some(jpac) = &self.jpac {
-                            serde_json::to_writer_pretty(&mut f, &jpac.export_alias()).unwrap();
-                        }
-                    }
-                    ui.close_menu();
-                }
-                if ui.button("Import Resources").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("JPA Resource", &["jpares"])
-                        .pick_file()
-                    {
-                        let path = path.display().to_string();
-                        let mut f = File::open(&path)
-                            .expect("File Could not be opened");
-                        if let Some(jpac) = &mut self.jpac {
-                            print!("{:?}", jpac.import_resources(&mut f));
-                        }
-                    }
-                    ui.close_menu();
-                }
-                if ui.button("Export Resources").clicked() {
-                    self.show_exporter = true;
-                }
-                if ui.button("Save").clicked() {
-                    if let Some(path) = &rfd::FileDialog::new()
-                        .set_file_name("new_jpc.jpc")
-                        .add_filter("JPC", &["jpc"])
-                        .save_file()
-                    {
-                        let mut f = File::create(path).expect("File Could not be opened");
-                        self.jpac.write(&mut f).expect("File could not be read");
-                    }
-                    ui.close_menu();
-                }
+                self.jpc_open(ui, ctx);
+                self.jpc_save(ui);
+            });
+            ui.menu_button("Resource", |ui| {
+                self.resource_import(ui);
+                self.resource_export(ui);
+            });
+            ui.menu_button("Alias", |ui| {
+                self.alias_import(ui);
+                self.alias_export(ui);
             });
         });
     }
+
+    fn jpc_open(&mut self, ui: &mut Ui, ctx: &Context) {
+        if ui.button("Open JPC").clicked() {
+            if let Some(path) = rfd::FileDialog::new()
+                .add_filter("JPC", &["jpc"])
+                .pick_file()
+            {
+                // Clear the existing JPC
+                // TODO: Check Dirty and confirm?
+                self.jpac = None;
+
+                let mut file_contents: Vec<u8> = Vec::new();
+                File::open(&path)
+                    .expect("File Could not be opened")
+                    .read_to_end(&mut file_contents)
+                    .expect("Could not Read File Contents");
+                match JPAC::read(&mut Cursor::new(file_contents)) {
+                    Ok(mut jpac) => {
+                        jpac.load_textures(ctx);
+                        self.jpac = Some(jpac);
+                        self.main_window = MainWindowState::Editor;
+                    },
+                    Err(msg) => {
+                        self.main_window = MainWindowState::ErrorMessage(msg.to_string());
+                    },
+                }
+            }
+            ui.close_menu();
+        }
+    }
+
+    fn jpc_save(&mut self, ui: &mut Ui) {
+        if ui.button("Save").clicked() {
+            if let Some(jpac) = &mut self.jpac {
+                if let Some(path) = &rfd::FileDialog::new()
+                    .set_file_name("new_jpc.jpc")
+                    .add_filter("JPC", &["jpc"])
+                    .save_file()
+                {
+                    let mut f = File::create(path).expect("File Could not be opened");
+                    jpac.write(&mut f).expect("File could not be read");
+                }
+                ui.close_menu();
+            } else {
+                self.main_window =
+                    MainWindowState::ErrorMessage("Please Open a JPC to Save".to_string());
+            }
+        }
+    }
+
+    fn alias_export(&mut self, ui: &mut Ui) {
+        if ui.button("Save Alias").clicked() {
+            if let Some(jpac) = &mut self.jpac {
+                if let Some(path) = &rfd::FileDialog::new()
+                    .set_file_name("resource_alias.json")
+                    .add_filter("Resource Alias", &["json"])
+                    .save_file()
+                {
+                    let mut f = File::create(path).expect("Unable to open/create file");
+                    serde_json::to_writer_pretty(&mut f, &jpac.export_alias()).unwrap();
+                }
+            } else {
+                self.main_window = MainWindowState::ErrorMessage(
+                    "Please Open a JPC to Export an Alias".to_string(),
+                );
+            }
+            ui.close_menu();
+        }
+    }
+    fn alias_import(&mut self, ui: &mut Ui) {
+        if ui.button("Open Alias").clicked() {
+            if let Some(jpac) = &mut self.jpac {
+                if let Some(path) = &rfd::FileDialog::new()
+                    .set_file_name("resource_alias.json")
+                    .add_filter("Resource Alias", &["json"])
+                    .pick_file()
+                {
+                    let mut f = File::open(path).expect("Unable to open file");
+                    jpac.apply_alias(&serde_json::from_reader(&mut f).unwrap());
+                }
+            } else {
+                self.main_window = MainWindowState::ErrorMessage(
+                    "Please Open a JPC to import an Alias".to_string(),
+                );
+            }
+            ui.close_menu();
+        }
+    }
+
+    fn resource_export(&mut self, ui: &mut Ui) {
+        if ui.button("Export Resources").clicked() {
+            self.main_window = MainWindowState::Exporter;
+            ui.close_menu();
+        }
+    }
+
+    fn resource_import(&mut self, ui: &mut Ui) {
+        if ui.button("Import Resources").clicked() {
+            if let Some(jpac) = &mut self.jpac {
+                if let Some(path) = rfd::FileDialog::new()
+                    .add_filter("JPA Resource", &["jpares"])
+                    .pick_file()
+                {
+                    let path = path.display().to_string();
+                    let mut f = File::open(&path).expect("File Could not be opened");
+                    print!("{:?}", jpac.import_resources(&mut f));
+                }
+            } else {
+                self.main_window = MainWindowState::ErrorMessage(
+                    "Please Open a JPC to import a resource".to_string(),
+                );
+            }
+            ui.close_menu();
+        }
+    }
+}
+
+/// Main View
+impl MyApp {
+    fn main_window(&mut self, ctx: &Context) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            match &self.main_window {
+                MainWindowState::None => self.show_into_text(ui),
+                MainWindowState::Exporter => self.show_exporter(ui),
+                MainWindowState::Editor => self.show_editor(self.selected, ui),
+                MainWindowState::Viewer => self.show_viewer(ui),
+                MainWindowState::ErrorMessage(errormsg) => {
+                    self.show_error_message(&errormsg.clone(), ui)
+                },
+            }
+        });
+    }
+
+    fn show_into_text(&mut self, ui: &mut Ui) {
+        ui.label("Welcome to the JPAC Editor! \n To get started, go to the `File` tab and select the .jpc file. \n Note: Currently the program only support JPAC2-11 (Version for Skyward Sword)");
+    }
+
+    fn show_error_message(&mut self, message: &String, ui: &mut Ui) {
+        ui.label(message);
+    }
+
+    fn show_editor(&mut self, selected: Selected, ui: &mut Ui) {
+        if let Some(jpac) = &mut self.jpac {
+            jpac.show_editor(selected, ui);
+        } else {
+            self.main_window = MainWindowState::ErrorMessage(
+                "To Show the Editor, please open a resource file".to_string(),
+            );
+        }
+    }
+
+    /// Interface for showing the resource exporter
+    fn show_exporter(&mut self, ui: &mut Ui) {
+        if let Some(jpac) = &mut self.jpac {
+            ui.horizontal(|ui| {
+                if ui.button("Export").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("JPA Resource", &["jpares"])
+                        .save_file()
+                    {
+                        let path = path.display().to_string();
+                        let mut f = File::create(&path).expect("File Could not be opened");
+                        let _ = jpac.export_resources(&self.selected_resources.selected, &mut f);
+                    }
+                    self.main_window = MainWindowState::Editor;
+                }
+                if ui.button("Cancel").clicked() {
+                    self.main_window = MainWindowState::Editor;
+                }
+            });
+            ui.label(format!(
+                "Selected Resources: {}",
+                self.selected_resources.filter_subtext
+            ));
+            jpac.resource_selector(&mut self.selected_resources, ui);
+        } else {
+            self.main_window = MainWindowState::ErrorMessage(
+                "To Show the Exporter, please open a resource file".to_string(),
+            );
+        }
+    }
+
+    fn show_viewer(&mut self, ui: &mut Ui) {
+        todo!("Implement Particle Viewing")
+    }
+}
+
+impl MyApp {
     fn show_ribbon(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("top_ribbon")
             .resizable(false)
-            .show(ctx, |ui| {
-                self.show_menu(ui);
-            });
+            .show(ctx, |ui| self.menu_bar(ui, ctx));
     }
 
     fn show_tree_view(&mut self, ctx: &egui::Context) {
@@ -138,63 +280,11 @@ impl MyApp {
             .default_width(250.0)
             .show(ctx, |ui| {
                 if let Some(jpac) = &mut self.jpac {
-                    jpac.show_tree_ui(&mut self.edit, &mut self.filter, ui);
+                    jpac.show_tree_ui(&mut self.selected, &mut self.tree_filter, ui);
                 } else {
                     ui.label("Pick a File First");
                 }
             });
-    }
-
-    fn show_edit_view(&mut self, ctx: &egui::Context) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The Main Edit Panel
-             if let Some(jpac) = &mut self.jpac {
-                if self.show_exporter {
-                    ui.horizontal(|ui| {
-                        if ui.button("Export").clicked() {
-                            if let Some(path) = rfd::FileDialog::new()
-                                .add_filter("JPA Resource", &["jpares"])
-                                .save_file()
-                            {
-                                let path = path.display().to_string();
-                                let mut f = File::create(&path)
-                                    .expect("File Could not be opened");
-                                let _ = jpac.export_resources(&self.selected_resources.selected, &mut f);
-                            }
-                            self.show_exporter = false;
-                        }
-                        if ui.button("Cancel").clicked() {
-                            self.show_exporter = false;
-                        }
-                    });
-                    ui.label(format!("Selected Resources: {}", self.selected_resources.filter_subtext));
-                    jpac.resource_selector(&mut self.selected_resources, ui);
-                } else {
-                    jpac.show_editor(self.edit, ui);
-                }
-            } 
-            // There isnt anything to edit if there isnt a file
-            else {
-                ui.label("Welcome to the JPAC Editor! \n To get started, go to the `File` tab and select the .jpc file. \n Note: Currently the program only support JPAC2-11 (Version for Skyward Sword)");
-                if let Some(picked_path) = &self.picked_path {
-                    let mut file_contents: Vec<u8> = Vec::new();
-                    File::open(&picked_path)
-                        .expect("File Could not be opened")
-                        .read_to_end(&mut file_contents)
-                        .expect("Could not Read File Contents");
-                    match JPAC::read(&mut Cursor::new(file_contents)) {
-                        Ok(mut jpac) => {
-                            jpac.load_textures(ctx);
-                            self.jpac = Some(jpac);
-                        },
-                        Err(msg) => {
-                            println!("{msg}");
-                            self.picked_path = None;
-                        },
-                    }
-                }
-            }
-        });
     }
 }
 
@@ -202,6 +292,6 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.show_ribbon(ctx);
         self.show_tree_view(ctx);
-        self.show_edit_view(ctx);
+        self.main_window(ctx);
     }
 }

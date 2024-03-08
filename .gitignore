@@ -43,3 +43,4 @@ navi_table.dat
 # Added by cargo
 
 /target
+*.blmap

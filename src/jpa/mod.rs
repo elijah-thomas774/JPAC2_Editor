@@ -5,7 +5,7 @@ use std::{
 };
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use egui::{ComboBox, Context, ScrollArea, Ui};
+use egui::{ComboBox, Context, ScrollArea, TextBuffer, Ui};
 
 use binrw::{binrw, BinRead, BinWrite};
 
@@ -261,20 +261,30 @@ impl JPAC {
         // Filter Text Entry
         let filter_res = ui.text_edit_singleline(&mut selections.filter);
         let filter_changed = filter_res.changed();
-        ComboBox::from_label("Filter Type")
+        let filter_type = selections.filter_type;
+        let type_changed = ComboBox::from_label("Filter Type")
             .selected_text(format!("{:?}", selections.filter_type))
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut selections.filter_type, FilterType::None, "None");
-                ui.selectable_value(
-                    &mut selections.filter_type,
-                    FilterType::Resource,
-                    "Resource ID",
-                );
-                ui.selectable_value(&mut selections.filter_type, FilterType::Name, "Name");
+                let is_none = ui
+                    .selectable_value(&mut selections.filter_type, FilterType::None, "None")
+                    .clicked();
+                let is_id = ui
+                    .selectable_value(
+                        &mut selections.filter_type,
+                        FilterType::Resource,
+                        "Resource ID",
+                    )
+                    .clicked();
+                let is_name = ui
+                    .selectable_value(&mut selections.filter_type, FilterType::Name, "Name")
+                    .clicked();
             });
 
         // Since the Filter changed, the show list needs to be updated
-        if filter_changed {
+        if filter_changed
+            || (filter_type != selections.filter_type)
+            || (selections.filter_type == FilterType::None && selections.show.is_empty())
+        {
             selections.show.clear();
             // If filter changed to be empty or is none, show everything
             if selections.filter.is_empty() || matches!(selections.filter_type, FilterType::None) {
@@ -408,6 +418,7 @@ impl JPAC {
                         })
                     {
                         selections.filter_subtext += res.alias.as_str();
+                        selections.filter_subtext += ", ";
                     }
                 },
                 JPAC::JPAC2_11(jpac) => {
@@ -417,6 +428,7 @@ impl JPAC {
                         })
                     {
                         selections.filter_subtext += res.alias.as_str();
+                        selections.filter_subtext += ", ";
                     }
                 },
             }
